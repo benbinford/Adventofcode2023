@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <!-- Define project coordinates -->
+    <groupId>com.benjaminbinford</groupId>
+    <artifactId>utils</artifactId>
+    <version>1.0.0</version>
+    
+    <!-- Define project dependencies -->
+    <dependencies>
+        <!-- Add your dependencies here -->
+    </dependencies>
+    
+    <!-- Define project build configuration -->
+    <build>
+        <!-- Add your build configuration here -->
+    </build>
+    
+    <!-- Define parent project -->
+    <parent>
+        <groupId>com.benjaminbinford</groupId>
+        <artifactId>aoc2023</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+</project>

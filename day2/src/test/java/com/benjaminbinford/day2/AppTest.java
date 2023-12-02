@@ -1,14 +1,14 @@
 package com.benjaminbinford.day2;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
-import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.benjaminbinford.utils.IO;
 
 class AppTest {
 
@@ -35,7 +35,7 @@ class AppTest {
                 "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n" +
                 "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
 
-        assertEquals(8, app.areGamesPossible(new BufferedReader(new StringReader(input))));
+        assertEquals(8, app.areGamesPossible(IO.getStaticStringLines(input).stream()));
     }
 
     @ParameterizedTest
@@ -64,7 +64,7 @@ class AppTest {
                 "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n" +
                 "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
 
-        assertEquals(2286, app.gamesCubeSet(new BufferedReader(new StringReader(input))));
+        assertEquals(2286, app.gamesCubeSet(IO.getStaticStringLines(input).stream()));
 
     }
 }

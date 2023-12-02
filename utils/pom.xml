@@ -22,6 +22,11 @@
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.32</version>
         </dependency>
+        <dependency>
+            <groupId>org.typemeta</groupId>
+            <artifactId>funcj-parser</artifactId>
+            <version>0.6.18</version>
+        </dependency>
     </dependencies>
 
     <!-- Define project build configuration -->

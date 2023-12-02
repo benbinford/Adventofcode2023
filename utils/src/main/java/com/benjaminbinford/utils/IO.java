@@ -6,8 +6,15 @@ import java.io.InputStreamReader;
 import java.io.StringReader;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public interface IO {
+
+    public static void answer(Object s) {
+        Logger logger = LoggerFactory.getLogger(IO.class);
+        logger.info("{}", s);
+    }
 
     public static List<String> getResourceLines(String path) {
         try (BufferedReader reader = new BufferedReader(

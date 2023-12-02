@@ -1,13 +1,12 @@
 package com.benjaminbinford.day1;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.io.BufferedReader;
-import java.io.StringReader;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import com.benjaminbinford.utils.IO;
 
 class AppTest {
 
@@ -15,8 +14,7 @@ class AppTest {
     void testCalibrate() {
         App app = new App();
         String input = "1abc2\npqr3stu8vwx\na1b2c3d4e5f\ntreb7uchet";
-        BufferedReader reader = new BufferedReader(new StringReader(input));
-        Number result = app.calibrate(reader, app::calibrateLine);
+        Number result = app.calibrate(IO.getStaticStringLines(input).stream(), app::calibrateLine);
         assertEquals(142, result.intValue());
     }
 
@@ -30,8 +28,7 @@ class AppTest {
                 "4nineeightseven2\n" + //
                 "zoneight234\n" + //
                 "7pqrstsixteen";
-        BufferedReader reader = new BufferedReader(new StringReader(input));
-        Number result = app.calibrate(reader, app::calibrateLine2);
+        Number result = app.calibrate(IO.getStaticStringLines(input).stream(), app::calibrateLine2);
         assertEquals(281, result.intValue());
     }
 

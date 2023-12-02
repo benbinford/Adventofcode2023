@@ -13,8 +13,8 @@ public class App {
 
         var app = new App();
 
-        System.out.println(app.areGamesPossible(lines.stream()));
-        System.out.println(app.gamesCubeSet(lines.stream()));
+        IO.answer(app.areGamesPossible(lines.stream()));
+        IO.answer(app.gamesCubeSet(lines.stream()));
     }
 
     public int isPossible(String line) {

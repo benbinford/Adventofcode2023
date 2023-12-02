@@ -1,37 +1,27 @@
 package com.benjaminbinford.day1;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.function.Function;
 import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import com.benjaminbinford.utils.IO;
 
 public class App {
     public static void main(String[] args) {
 
-        // try (BufferedReader reader = new BufferedReader(
-        // new
-        // InputStreamReader(ClassLoader.getSystemResourceAsStream("com/benjaminbinford/day1/input.txt"))))
-        // {
-        // var app = new App();
-        // System.out.println(app.calibrate(reader, app::calibrateLine));
-        // } catch (IOException e) {
-        // e.printStackTrace();
-        // }
+        var lines = IO.getResourceLines("com/benjaminbinford/day1/input.txt");
 
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(ClassLoader.getSystemResourceAsStream("com/benjaminbinford/day1/input.txt")))) {
-            var app = new App();
-            System.out.println(app.calibrate(reader, app::calibrateLine2));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        var app = new App();
+        IO.answer(app.calibrate(lines.stream(), app::calibrateLine));
+
+        IO.answer(app.calibrate(lines.stream(), app::calibrateLine2));
+
     }
 
-    Number calibrate(BufferedReader reader, Function<? super String, ? extends Number> mapper) {
-        return reader.lines().peek(l -> System.out.printf("%s, ", l)).map(mapper).peek(System.out::println)
+    Number calibrate(Stream<String> lines, Function<? super String, ? extends Number> mapper) {
+        return lines.map(mapper)
                 .collect(Collectors.summingLong(Number::longValue));
 
     }

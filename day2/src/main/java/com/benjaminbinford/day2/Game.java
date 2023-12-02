@@ -6,10 +6,10 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.typemeta.funcj.data.Chr;
-import org.typemeta.funcj.data.IList;
 import org.typemeta.funcj.parser.Input;
 import org.typemeta.funcj.parser.Parser;
-import org.typemeta.funcj.parser.Text;
+
+import static com.benjaminbinford.utils.ParserUtil.*;
 
 public record Game(int gameId, List<Map<String, Integer>> hands) {
     public Game
@@ -30,10 +30,7 @@ public record Game(int gameId, List<Map<String, Integer>> hands) {
     }
 
     public Map<String, Integer> cubeSet() {
-        Map<String, Integer> m = new HashMap<>();
-        m.put(RED, 0);
-        m.put(GREEN, 0);
-        m.put(BLUE, 0);
+        Map<String, Integer> m = emptyHand();
 
         return hands.stream()
                 .reduce(m, (nextM, h) -> {
@@ -48,6 +45,14 @@ public record Game(int gameId, List<Map<String, Integer>> hands) {
                     }
                     return nextM;
                 });
+    }
+
+    private static Map<String, Integer> emptyHand() {
+        Map<String, Integer> m = new HashMap<>();
+        m.put(RED, 0);
+        m.put(GREEN, 0);
+        m.put(BLUE, 0);
+        return m;
     }
 
     public static Game parse(String input) {
@@ -69,27 +74,16 @@ public record Game(int gameId, List<Map<String, Integer>> hands) {
 
         // Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue
 
-        final Parser<Chr, String> gameToken = Text.string("Game");
+        final var gameIdParser = intTok().between(tok("Game"), tok(':'));
 
-        final Parser<Chr, Integer> gameIdParser = gameToken.andL(Text.ws.many()).andR(Text.intr)
-                .andL(Text.ws.many())
-                .andL(Text.chr(':'));
-
-        final Parser<Chr, String> colorParser = Parser.choice(Text.string(RED), Text.string(GREEN),
-                Text.string(BLUE));
-
-        final Parser<Chr, Map<String, Integer>> color = Text.ws.many().andR(Text.intr).andL(Text.ws.many())
-                .and(colorParser)
+        final var color = intTok().and(tok(RED, GREEN, BLUE))
                 .map((i, c) -> Map.of(c, i));
 
-        final Parser<Chr, Map<String, Integer>> hand = color.sepBy(Text.chr(','))
-                .map(maps -> maps.stream().reduce(new HashMap<>(Map.of(RED, 0, GREEN, 0, BLUE, 0)), (m1, m2) -> {
-                    m1.putAll(m2);
-                    return m1;
-                }));
+        final var hand = color.sepBy(tok(','))
+                .map(mergeMaps(Game::emptyHand));
 
-        final Parser<Chr, IList<Map<String, Integer>>> hands = hand.sepBy(Text.chr(';'));
+        final var hands = hand.sepBy(tok(';'));
 
-        GAME_PARSER = gameIdParser.and(hands).map(i -> l -> new Game(i, l.toList()));
+        GAME_PARSER = grammar(gameIdParser.and(hands).map(i -> l -> new Game(i, l.toList())));
     }
 }

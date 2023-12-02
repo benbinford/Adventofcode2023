@@ -1,0 +1,70 @@
+package com.benjaminbinford.day2;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class AppTest {
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green|1",
+            "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue|2",
+            "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red|0",
+            "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red|0",
+            "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green|5",
+    })
+    void testGamePossible(String line, int expected) {
+        App app = new App();
+        int result = app.isPossible(line);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    void testGames() {
+        App app = new App();
+        String input = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n" +
+                "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n" +
+                "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n" +
+                "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n" +
+                "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
+
+        assertEquals(8, app.areGamesPossible(new BufferedReader(new StringReader(input))));
+    }
+
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', value = {
+            "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green|4|2|6",
+            "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue|1|3|4",
+            "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red|20|13|6",
+            "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red|14|3|15",
+            "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green|6|3|2",
+    })
+    void testGameCubeSet(String line, int red, int green, int blue) {
+        App app = new App();
+        Map<String, Integer> result = app.cubeSet(line);
+
+        assertEquals(red, result.get("red"));
+        assertEquals(green, result.get("green"));
+        assertEquals(blue, result.get("blue"));
+    }
+
+    @Test
+    void testGamesPower() {
+        App app = new App();
+        String input = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n" +
+                "Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n" +
+                "Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n" +
+                "Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n" +
+                "Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
+
+        assertEquals(2286, app.gamesCubeSet(new BufferedReader(new StringReader(input))));
+
+    }
+}

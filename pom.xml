@@ -11,6 +11,7 @@
     <modules>
         <module>utils</module>
         <module>day1</module>
+        <module>day2</module>
     </modules>
 
     <properties>

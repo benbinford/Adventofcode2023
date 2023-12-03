@@ -16,6 +16,10 @@ public interface IO {
         logger.info("{}", s);
     }
 
+    public static String getResource(String path) {
+        return getResourceLines(path).stream().collect(Collectors.joining("\n"));
+    }
+
     public static List<String> getResourceLines(String path) {
         try (BufferedReader reader = new BufferedReader(
                 new InputStreamReader(ClassLoader.getSystemResourceAsStream(path)))) {

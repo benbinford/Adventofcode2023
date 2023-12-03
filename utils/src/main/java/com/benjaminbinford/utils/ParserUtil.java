@@ -2,14 +2,21 @@ package com.benjaminbinford.utils;
 
 import org.typemeta.funcj.data.Chr;
 import org.typemeta.funcj.data.IList;
+import org.typemeta.funcj.data.Lazy;
 import org.typemeta.funcj.functions.Functions.F;
 import org.typemeta.funcj.functions.Functions.F0;
+import org.typemeta.funcj.parser.Input;
 import org.typemeta.funcj.parser.Parser;
+import org.typemeta.funcj.parser.Result;
+import org.typemeta.funcj.parser.SymSet;
+
 import static org.typemeta.funcj.parser.Text.ws;
 
 import java.util.Map;
 
 import org.typemeta.funcj.parser.Text;
+
+import com.benjaminbinford.utils.LineTrackingStringInput.Position;
 
 import static org.typemeta.funcj.parser.Text.chr;
 import static org.typemeta.funcj.parser.Text.intr;
@@ -47,4 +54,29 @@ public interface ParserUtil {
         });
     }
 
+    public static LineTrackingStringInput lineTrackingInput(String input) {
+        return new LineTrackingStringInput(input.toCharArray());
+    }
+
+    public static Parser<Chr, Position> position() {
+        return new Parser<Chr, Position>() {
+
+            @Override
+            public Lazy<Boolean> acceptsEmpty() {
+                return () -> true;
+            }
+
+            @Override
+            public Lazy<SymSet<Chr>> firstSet() {
+                return SymSet::empty;
+            }
+
+            @Override
+            public Result<Chr, Position> apply(Input<Chr> in, SymSet<Chr> follow) {
+                return Result.success((Position) in.position(), in);
+            }
+
+        };
+
+    }
 }

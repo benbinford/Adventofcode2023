@@ -16,7 +16,7 @@ import java.util.Map;
 
 import org.typemeta.funcj.parser.Text;
 
-import com.benjaminbinford.utils.LineTrackingStringInput.Position;
+import com.benjaminbinford.utils.LineTrackingInput.Position;
 
 import static org.typemeta.funcj.parser.Text.chr;
 import static org.typemeta.funcj.parser.Text.intr;
@@ -54,8 +54,8 @@ public interface ParserUtil {
         });
     }
 
-    public static LineTrackingStringInput lineTrackingInput(String input) {
-        return new LineTrackingStringInput(input.toCharArray());
+    public static LineTrackingInput lineTrackingInput(String input) {
+        return new LineTrackingInput(Input.of(input));
     }
 
     public static Parser<Chr, Position> position() {

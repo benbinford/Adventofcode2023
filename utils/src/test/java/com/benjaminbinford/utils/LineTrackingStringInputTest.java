@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import org.typemeta.funcj.data.Chr;
 
-import com.benjaminbinford.utils.LineTrackingStringInput.Position;
+import com.benjaminbinford.utils.LineTrackingInput.Position;
 
 class PositionTest {
     @Test

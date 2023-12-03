@@ -1,11 +1,9 @@
 package com.benjaminbinford.utils;
 
-import java.util.Objects;
-
 import org.typemeta.funcj.data.Chr;
 import org.typemeta.funcj.parser.Input;
 
-public class LineTrackingStringInput implements Input<Chr> {
+public class LineTrackingInput implements Input<Chr> {
 
     public static record Position(int line, int column, int offset) {
         public static Position mzero() {
@@ -37,46 +35,39 @@ public class LineTrackingStringInput implements Input<Chr> {
         }
     }
 
-    private final char[] data;
+    private Input<Chr> backingInput;
     private Position position;
-    private final LineTrackingStringInput other;
 
-    LineTrackingStringInput(char[] data) {
-        this.data = data;
+    LineTrackingInput(Input<Chr> backingInput) {
+        this.backingInput = backingInput;
         this.position = Position.mzero();
-        this.other = new LineTrackingStringInput(this, data);
     }
 
-    LineTrackingStringInput(LineTrackingStringInput other, char[] data) {
-        this.data = data;
-        this.position = Position.mzero();
-        this.other = other;
-    }
-
-    private LineTrackingStringInput setPosition(Position position) {
+    LineTrackingInput(Input<Chr> backingInput, Position position) {
+        this.backingInput = backingInput;
         this.position = position;
-        return this;
     }
 
     @Override
     public String toString() {
-        final String dataStr = isEof() ? "EOF" : String.valueOf(data[position.offset]);
-        return "LineTrackingStringInput{" + position + ",data=\"" + dataStr + "\"";
+        return "LineTrackingStringInput{" + position + ",input=\"" + backingInput + "\"" + "}";
     }
 
     @Override
     public boolean isEof() {
-        return position.offset() >= data.length;
+        return backingInput.isEof();
     }
 
     @Override
     public Chr get() {
-        return Chr.valueOf(data[position.offset]);
+        return backingInput.get();
     }
 
     @Override
     public Input<Chr> next() {
-        return other.setPosition(position.next(get()));
+        Input<Chr> nextInput = backingInput.next();
+
+        return new LineTrackingInput(nextInput, position.next(get()));
     }
 
     @Override
@@ -90,13 +81,12 @@ public class LineTrackingStringInput implements Input<Chr> {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        LineTrackingStringInput that = (LineTrackingStringInput) o;
-        return position.equals(that.position) &&
-                data == that.data;
+        LineTrackingInput that = (LineTrackingInput) o;
+        return backingInput.equals(that.backingInput);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(data, position);
+        return backingInput.hashCode();
     }
 }

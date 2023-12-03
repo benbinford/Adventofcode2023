@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.benjaminbinford.day3.Schematic.EnginePart;
 import com.benjaminbinford.day3.Schematic.PartNumber;
-import com.benjaminbinford.utils.LineTrackingStringInput.Position;
+import com.benjaminbinford.utils.LineTrackingInput.Position;
 
 /**
  * Unit test for simple App.

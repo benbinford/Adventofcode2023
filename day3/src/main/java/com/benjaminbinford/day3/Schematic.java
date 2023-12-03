@@ -17,7 +17,7 @@ import org.typemeta.funcj.data.Chr;
 import org.typemeta.funcj.data.IList;
 import org.typemeta.funcj.parser.Parser;
 
-import com.benjaminbinford.utils.LineTrackingStringInput.Position;
+import com.benjaminbinford.utils.LineTrackingInput.Position;
 
 public record Schematic(List<EnginePart> engineParts, List<PartNumber> partNumbers) {
 

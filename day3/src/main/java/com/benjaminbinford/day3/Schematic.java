@@ -10,6 +10,7 @@ import static org.typemeta.funcj.parser.Text.ws;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.typemeta.funcj.data.Chr;
@@ -38,11 +39,11 @@ public record Schematic(List<EnginePart> engineParts, List<PartNumber> partNumbe
 
         var junk = ws.or(chr('.'));
 
-        Parser<Chr, Marker> num = position().and(uintr).and(position())
+        var num = position().and(uintr).and(position())
                 .map((p1, n, p2) -> (Marker) new PartNumber(p1, p2.backupOne(), n))
                 .andL(junk.many());
 
-        Parser<Chr, Marker> engine = position()
+        var engine = position()
                 .and(satisfy("enginepart",
                         c -> c.charValue() != '.' && !Character.isLetter(c.charValue())
                                 && !Character.isDigit(c.charValue()) && !Character.isWhitespace(c.charValue())))
@@ -71,43 +72,21 @@ public record Schematic(List<EnginePart> engineParts, List<PartNumber> partNumbe
     }
 
     public Stream<PartNumber> findAttachedPartNumbers() {
-        return partNumbers.stream().filter(p -> {
-            int x1 = p.position().column() - 1;
-            int x2 = p.end().column() + 1;
-            int y1 = p.position().line() - 1;
-            int y2 = p.end().line() + 1;
-
-            return engineParts.stream().anyMatch(e -> {
-                int ex = e.position().column();
-                int ey = e.position().line();
-
-                return ex >= x1 && ex <= x2 && ey >= y1 && ey <= y2;
-            });
-
-        });
+        return partNumbers.stream()
+                .filter(p -> engineParts.stream().anyMatch(e -> e.position().touchingBox(p.position(), p.end())));
     }
 
     public int sumAttachedPartNumbers() {
         return findAttachedPartNumbers().mapToInt(p -> p.partNumber()).sum();
     }
 
-    public Stream<Integer> findGearRatios() {
+    public IntStream findGearRatios() {
         return engineParts().stream()
                 .filter(e -> e.gear())
-                .map(e -> {
+                .mapToInt(e -> {
 
-                    int ex = e.position().column();
-                    int ey = e.position().line();
-
-                    List<PartNumber> touching = partNumbers().stream().filter(p -> {
-
-                        int x1 = p.position().column() - 1;
-                        int x2 = p.end().column() + 1;
-                        int y1 = p.position().line() - 1;
-                        int y2 = p.end().line() + 1;
-
-                        return ex >= x1 && ex <= x2 && ey >= y1 && ey <= y2;
-                    }).collect(Collectors.toList());
+                    List<PartNumber> touching = partNumbers().stream()
+                            .filter(p -> e.position().touchingBox(p.position(), p.end())).collect(Collectors.toList());
 
                     if (touching.size() != 2) {
                         return 0;
@@ -120,7 +99,7 @@ public record Schematic(List<EnginePart> engineParts, List<PartNumber> partNumbe
     }
 
     public Object sumGearRations() {
-        return findGearRatios().mapToInt(p -> p).sum();
+        return findGearRatios().sum();
     }
 
 }

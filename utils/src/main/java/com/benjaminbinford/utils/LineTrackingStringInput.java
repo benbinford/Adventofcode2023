@@ -31,6 +31,10 @@ public class LineTrackingStringInput implements Input<Chr> {
             }
         }
 
+        public boolean touchingBox(Position upperLeft, Position lowerRight) {
+            return line >= upperLeft.line - 1 && line <= lowerRight.line + 1 && column >= upperLeft.column - 1
+                    && column <= lowerRight.column + 1;
+        }
     }
 
     private final char[] data;

@@ -1,6 +1,7 @@
 package com.benjaminbinford.day3;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -65,10 +66,10 @@ class AppTest {
                 schematic.findAttachedPartNumbers().map(c -> c.partNumber()).collect(Collectors.toList()));
 
         assertEquals(4361, schematic.sumAttachedPartNumbers());
-        assertEquals(List.of(
-                16345,
-                451490),
-                schematic.findGearRatios().collect(Collectors.toList()));
+        var gearRatios = schematic.findGearRatios().iterator();
+        assertEquals(16345, gearRatios.next());
+        assertEquals(451490, gearRatios.next());
+        assertFalse(gearRatios.hasNext());
 
     }
 }

@@ -17,7 +17,13 @@ public interface IO {
     }
 
     public static String getResource(String path) {
-        return getResourceLines(path).stream().collect(Collectors.joining("\n"));
+        try (var is = ClassLoader.getSystemResourceAsStream(path)) {
+
+            return new String(is.readAllBytes());
+
+        } catch (IOException e) {
+            throw new AdventException(e);
+        }
     }
 
     public static List<String> getResourceLines(String path) {

@@ -8,4 +8,7 @@ public class AdventException extends RuntimeException {
         super(e);
     }
 
+    public AdventException(String message) {
+        super(message);
+    }
 }

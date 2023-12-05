@@ -38,7 +38,7 @@ public class LineTrackingInput implements Input<Chr> {
     private Input<Chr> backingInput;
     private Position position;
 
-    LineTrackingInput(Input<Chr> backingInput) {
+    public LineTrackingInput(Input<Chr> backingInput) {
         this.backingInput = backingInput;
         this.position = Position.mzero();
     }

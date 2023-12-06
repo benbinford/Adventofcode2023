@@ -21,6 +21,7 @@ import com.benjaminbinford.utils.LineTrackingInput.Position;
 import static org.typemeta.funcj.parser.Text.chr;
 import static org.typemeta.funcj.parser.Text.intr;
 import static org.typemeta.funcj.parser.Text.string;
+import static org.typemeta.funcj.parser.Text.ulng;
 
 public interface ParserUtil {
     public static <T> Parser<Chr, T> tok(Parser<Chr, T> p) {
@@ -37,6 +38,10 @@ public interface ParserUtil {
 
     public static Parser<Chr, Integer> intTok() {
         return intr.andL(ws.skipMany());
+    }
+
+    public static Parser<Chr, Long> longTok() {
+        return ulng.andL(ws.skipMany());
     }
 
     public static Parser<Chr, Chr> tok(char c) {

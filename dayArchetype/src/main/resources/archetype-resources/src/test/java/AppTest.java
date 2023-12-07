@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.Test;
 
+import com.benjaminbinford.utils.IO;
 
 /**
  * Unit test for simple App.
@@ -17,6 +18,6 @@ public class AppTest
     @Test
     public void shouldAnswerWithTrue()
     {
-        assertTrue( true );
+        final var input = IO.getResource("${package.replace('.', '/')}/testinput.txt");
     }
 }

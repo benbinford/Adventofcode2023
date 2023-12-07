@@ -14,9 +14,9 @@ public enum HandType {
         } else if (max == 4) {
             return FOUR_OF_A_KIND;
         } else if (max == 3) {
-            return determineThreeOfAKindOrFullHouse(counts);
+            return handleThreeOfAKindOrFullHouse(0, counts);
         } else if (max == 2) {
-            return determineTwoPairOrOnePair(counts);
+            return handleTwoPairOrOnePair(0, counts);
         } else {
             return HIGH_CARD;
         }
@@ -38,35 +38,6 @@ public enum HandType {
             }
         }
         return max;
-    }
-
-    private static HandType determineThreeOfAKindOrFullHouse(int[] counts) {
-        var hasPair = false;
-        for (var count : counts) {
-            if (count == 2) {
-                hasPair = true;
-                break;
-            }
-        }
-        if (hasPair) {
-            return FULL_HOUSE;
-        } else {
-            return THREE_OF_A_KIND;
-        }
-    }
-
-    private static HandType determineTwoPairOrOnePair(int[] counts) {
-        var pairCount = 0;
-        for (var count : counts) {
-            if (count == 2) {
-                pairCount++;
-            }
-        }
-        if (pairCount == 2) {
-            return TWO_PAIR;
-        } else {
-            return ONE_PAIR;
-        }
     }
 
     private static final int JOKER_ORDINAL = CardWithJoker.J.ordinal();
@@ -107,18 +78,36 @@ public enum HandType {
         } else if (numJokers == 1) {
             return FOUR_OF_A_KIND;
         } else {
-            return determineThreeOfAKindOrFullHouse(counts);
+            var hasPair = false;
+            for (var count : counts) {
+                if (count == 2) {
+                    hasPair = true;
+                    break;
+                }
+            }
+            if (hasPair) {
+                return FULL_HOUSE;
+            } else {
+                return THREE_OF_A_KIND;
+            }
         }
     }
 
     private static HandType handleTwoPairOrOnePair(int numJokers, int[] counts) {
-        var pairs = determineTwoPairOrOnePair(counts);
-        if (pairs == ONE_PAIR) {
+        var pairCount = 0;
+        for (var count : counts) {
+            if (count == 2) {
+                pairCount++;
+            }
+        }
+
+        if (pairCount == 1) {
             return handleOnePair(numJokers);
-        } else if (pairs == TWO_PAIR) {
+        } else if (pairCount == 2) {
             return handleTwoPair(numJokers);
         }
-        return HandType.FIVE_OF_A_KIND;
+
+        throw new IllegalStateException("Invalid pair count: " + pairCount);
     }
 
     private static HandType handleOnePair(int numJokers) {

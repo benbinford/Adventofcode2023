@@ -19,7 +19,7 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.benjaminbinford</groupId>
+      <groupId>com.benjaminbinford.aoc2023</groupId>
       <artifactId>utils</artifactId>
       <version>1.0.0</version>
     </dependency>
@@ -70,7 +70,7 @@
 
   <!-- Define parent project -->
   <parent>
-    <groupId>com.benjaminbinford</groupId>
+    <groupId>com.benjaminbinford.aoc2023</groupId>
     <artifactId>aoc2023</artifactId>
     <version>1.0.0</version>
     <relativePath>../pom.xml</relativePath>

@@ -3,7 +3,7 @@ package com.benjaminbinford.day7;
 public enum Card {
     A, K, Q, J, T, N9, N8, N7, N6, N5, N4, N3, N2;
 
-    public static Card of(char c) {
+    public static Card of(int c) {
         switch (c) {
             case 'A':
                 return A;

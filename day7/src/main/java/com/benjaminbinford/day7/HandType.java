@@ -1,25 +1,47 @@
 package com.benjaminbinford.day7;
 
-import java.util.Arrays;
-
 public enum HandType {
     FIVE_OF_A_KIND, FOUR_OF_A_KIND, FULL_HOUSE, THREE_OF_A_KIND, TWO_PAIR, ONE_PAIR, HIGH_CARD;
 
-    public static HandType of(Card[] cards) {
+    public static HandType of(Card[] cards, Card... jokers) {
         var counts = countCardOccurrences(cards);
-        var max = findMaxCount(counts);
+
+        var jokerMap = createJokerMap(jokers);
+
+        var max = findMaxCount(counts, jokerMap);
+
+        var numJokers = findJokerCount(counts, jokerMap);
 
         if (max == 5) {
             return FIVE_OF_A_KIND;
         } else if (max == 4) {
-            return FOUR_OF_A_KIND;
+            return handleFourOfAKind(numJokers);
         } else if (max == 3) {
-            return handleThreeOfAKindOrFullHouse(0, counts);
+            return handleThreeOfAKindOrFullHouse(numJokers, counts, jokerMap);
         } else if (max == 2) {
-            return handleTwoPairOrOnePair(0, counts);
+            return handleTwoPairOrOnePair(numJokers, counts, jokerMap);
         } else {
-            return HIGH_CARD;
+            return handleRemainingCases(numJokers);
         }
+    }
+
+    private static int findJokerCount(int[] counts, boolean[] jokerMap) {
+        var sum = 0;
+        for (var i = 0; i < counts.length; i++) {
+            if (jokerMap[i]) {
+                sum += counts[i];
+            }
+
+        }
+        return sum;
+    }
+
+    private static boolean[] createJokerMap(Card[] jokers) {
+        var counts = new boolean[13];
+        for (var card : jokers) {
+            counts[card.ordinal()] = true;
+        }
+        return counts;
     }
 
     private static <T extends Enum<T>> int[] countCardOccurrences(T[] cards) {
@@ -30,38 +52,18 @@ public enum HandType {
         return counts;
     }
 
-    private static int findMaxCount(int[] counts) {
+    private static int findMaxCount(int[] counts, boolean[] jokerMap) {
         var max = 0;
-        for (var count : counts) {
+        for (var i = 0; i < counts.length; i++) {
+            if (jokerMap[i]) {
+                continue;
+            }
+            var count = counts[i];
             if (count > max) {
                 max = count;
             }
         }
         return max;
-    }
-
-    private static final int JOKER_ORDINAL = CardWithJoker.J.ordinal();
-
-    public static HandType ofJokers(CardWithJoker[] cards) {
-        var counts = countCardOccurrences(cards);
-        var numJokers = counts[JOKER_ORDINAL];
-
-        // remove jokers from consideration
-        counts = Arrays.copyOfRange(counts, 0, counts.length - 1);
-
-        var max = findMaxCount(counts);
-
-        if (max == 5) {
-            return FIVE_OF_A_KIND;
-        } else if (max == 4) {
-            return handleFourOfAKind(numJokers);
-        } else if (max == 3) {
-            return handleThreeOfAKindOrFullHouse(numJokers, counts);
-        } else if (max == 2) {
-            return handleTwoPairOrOnePair(numJokers, counts);
-        } else {
-            return handleRemainingCases(numJokers);
-        }
     }
 
     private static HandType handleFourOfAKind(int numJokers) {
@@ -72,17 +74,21 @@ public enum HandType {
         }
     }
 
-    private static HandType handleThreeOfAKindOrFullHouse(int numJokers, int[] counts) {
+    private static HandType handleThreeOfAKindOrFullHouse(int numJokers, int[] counts, boolean[] jokerMap) {
         if (numJokers == 2) {
             return FIVE_OF_A_KIND;
         } else if (numJokers == 1) {
             return FOUR_OF_A_KIND;
         } else {
             var hasPair = false;
-            for (var count : counts) {
-                if (count == 2) {
-                    hasPair = true;
-                    break;
+            for (var i = 0; i < counts.length; i++) {
+                if (!jokerMap[i]) {
+
+                    var count = counts[i];
+                    if (count == 2) {
+                        hasPair = true;
+                        break;
+                    }
                 }
             }
             if (hasPair) {
@@ -93,11 +99,14 @@ public enum HandType {
         }
     }
 
-    private static HandType handleTwoPairOrOnePair(int numJokers, int[] counts) {
+    private static HandType handleTwoPairOrOnePair(int numJokers, int[] counts, boolean[] jokerMap) {
         var pairCount = 0;
-        for (var count : counts) {
-            if (count == 2) {
-                pairCount++;
+        for (var i = 0; i < counts.length; i++) {
+            if (!jokerMap[i]) {
+                var count = counts[i];
+                if (count == 2) {
+                    pairCount++;
+                }
             }
         }
 

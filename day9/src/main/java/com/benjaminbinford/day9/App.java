@@ -41,7 +41,7 @@ public class App {
         IO.answer(app.extrapolateOasisBackwards().sum());
 
         long elapsedTime = System.nanoTime() - startTime;
-        IO.answer(String.format("Elapsed time: %d", elapsedTime));
+        IO.answer(String.format("Elapsed time: %d", elapsedTime / 100_000));
     }
 
     public IntStream extrapolateOasis() {

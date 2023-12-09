@@ -10,14 +10,16 @@ import com.benjaminbinford.utils.IO;
 /**
  * Unit test for simple App.
  */
-public class AppTest 
+class AppTest 
 {
     /**
      * Rigorous Test :-)
      */
     @Test
-    public void shouldAnswerWithTrue()
+    void shouldAnswerWithTrue()
     {
         final var input = IO.getResource("${package.replace('.', '/')}/testinput.txt");
+
+        final var app = new App(input);
     }
 }

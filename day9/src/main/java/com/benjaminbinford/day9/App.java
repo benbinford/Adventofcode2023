@@ -12,16 +12,12 @@ import com.benjaminbinford.utils.IO;
  */
 public class App {
 
-    ThreadLocal<int[][]> matrix = new ThreadLocal<>();
     int maxLineLength;
 
     List<int[]> lines;
 
     public int[][] getWorkingArea() {
-        if (matrix.get() == null) {
-            matrix.set(new int[maxLineLength + 1][maxLineLength + 1]);
-        }
-        return matrix.get();
+        return new int[maxLineLength + 1][maxLineLength + 1];
     }
 
     public App(String input) {
@@ -40,16 +36,20 @@ public class App {
 
         final var app = new App(input);
 
+        long startTime = System.nanoTime();
         IO.answer(app.extrapolateOasis().sum());
         IO.answer(app.extrapolateOasisBackwards().sum());
+
+        long elapsedTime = System.nanoTime() - startTime;
+        IO.answer(String.format("Elapsed time: %d", elapsedTime));
     }
 
     public IntStream extrapolateOasis() {
-        return lines.parallelStream().mapToInt(this::extrapolateLine);
+        return lines.stream().mapToInt(this::extrapolateLine);
     }
 
     public IntStream extrapolateOasisBackwards() {
-        return lines.parallelStream().map(this::reverseArray).mapToInt(this::extrapolateLine);
+        return lines.stream().map(this::reverseArray).mapToInt(this::extrapolateLine);
     }
 
     public int[] reverseArray(int[] a) {
@@ -63,9 +63,7 @@ public class App {
     public int extrapolateLine(int[] line) {
         int[][] a = getWorkingArea();
         System.arraycopy(line, 0, a[0], 0, line.length);
-        for (int i = 1; i <= line.length; i++) {
-            Arrays.fill(a[i], 0);
-        }
+
         boolean found = false;
 
         int maxRow = 0;

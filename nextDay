@@ -22,4 +22,4 @@ artifactId="day${next_day}"
 package="${groupId}.day${next_day}"
 version="1.0-SNAPSHOT"
 
-mvn install && mvn archetype:generate -DarchetypeGroupId=com.benjaminbinford.aoc2023 -DarchetypeArtifactId=dayArchetype -DarchetypeVersion=1.0-SNAPSHOT -DgroupId="${groupId}" -DartifactId="${artifactId}" -Dpackage="${package}" -Dversion="${version}" -DinteractiveMode=false
+mvn install -pl dayArchetype && mvn archetype:generate -DarchetypeGroupId=com.benjaminbinford.aoc2023 -DarchetypeArtifactId=dayArchetype -DarchetypeVersion=1.0-SNAPSHOT -DgroupId="${groupId}" -DartifactId="${artifactId}" -Dpackage="${package}" -Dversion="${version}" -DinteractiveMode=false

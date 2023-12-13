@@ -4,20 +4,54 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.typemeta.funcj.tuples.Tuple2;
 
-public record ConditionRecord(ArrayList<Tuple2<Condition, Integer>> conditions, ArrayList<Integer> runLengths) {
+public record ConditionRecord(
+        ArrayList<Tuple2<Condition, Integer>> conditions, ArrayList<Integer> runLengths, String rep) {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConditionRecord.class);
+
+    public static ConditionRecord explode(String line) {
+        var components = line.split(" ");
+        var cond = components[0];
+        var runLengths = components[1];
+        cond = cond + "?" + cond + "?" + cond + "?" + cond + "?" + cond;
+        runLengths = runLengths + "," + runLengths + "," + runLengths + "," + runLengths + "," + runLengths;
+        return ofParts(cond, runLengths);
+    }
 
     public static ConditionRecord of(String line) {
-
         var components = line.split(" ");
-        var conditions = new ArrayList<Condition>(components[0].chars().mapToObj(Condition::of).toList());
-        var runLengths = Arrays.stream(components[1].split(",")).mapToInt(Integer::parseInt)
+        return ofParts(components[0], components[1]);
+    }
+
+    public static ConditionRecord ofParts(String conditionsRep, String runLengthsRep) {
+
+        var conditions = buildConditions(conditionsRep);
+
+        var runLengths = getRunLengths(runLengthsRep);
+
+        return new ConditionRecord(conditions, runLengths, conditionsRep + " " + runLengthsRep);
+
+    }
+
+    private static ArrayList<Integer> getRunLengths(String s) {
+        return Arrays.stream(s.split(",")).mapToInt(Integer::parseInt)
                 .<ArrayList<Integer>>collect(ArrayList::new,
                         ArrayList::add, ArrayList::addAll);
+    }
+
+    private static record ConditionBuilder(int currentRun, HeadList<Tuple2<Condition, Integer>> conditions,
+            HeadList<Integer> targets, String rep) {
+
+    }
+
+    private static ArrayList<Tuple2<Condition, Integer>> buildConditions(String s) {
+        var conditions = new ArrayList<Condition>(s.chars().mapToObj(Condition::of).toList());
 
         // Run length encoding
 
@@ -38,13 +72,7 @@ public record ConditionRecord(ArrayList<Tuple2<Condition, Integer>> conditions, 
 
         compressedConditions.add(new Tuple2<>(currentCondition, currentRunLength));
 
-        return new ConditionRecord(compressedConditions, runLengths);
-
-    }
-
-    private static record ConditionBuilder(int currentRun, HeadList<Tuple2<Condition, Integer>> conditions,
-            HeadList<Integer> targets, String rep) {
-
+        return compressedConditions;
     }
 
     public sealed interface HeadList<T> permits EmptyList, NonEmptyList {
@@ -106,6 +134,58 @@ public record ConditionRecord(ArrayList<Tuple2<Condition, Integer>> conditions, 
         }
     }
 
+    public static long findExplodedArrangements(String line) {
+        var components = line.split(" ");
+
+        String crSa = components[0] + "?";
+        var conditionsA = buildConditions(crSa);
+
+        var runLengths = getRunLengths(components[1]);
+        var crA = new ConditionRecord(conditionsA, runLengths, crSa + " " + components[1]).findArrangements();
+
+        var actualResult = explode(line).findArrangements();
+
+        if (components[0].charAt(0) == '#') {
+            crA = ConditionRecord.of(line).findArrangements();
+            var result = crA * crA * crA * crA * crA;
+
+            // LOGGER.info("{} {} {}", line, line, crA);
+            // LOGGER.info("{} {} (b invalid)", line, result);
+            if (result != actualResult) {
+                LOGGER.info("{} {} {}", line, result, actualResult);
+            }
+            return actualResult;
+        } else if (components[0].charAt(components[0].length() - 1) == '#') {
+            var result = crA * crA * crA * crA * crA;
+
+            // LOGGER.info("{} {} {}", line, crSa, crA);
+            // LOGGER.info("{} {} (b invalid)", line, result);
+            if (result != actualResult) {
+                LOGGER.info("{} {} {}", line, result, actualResult);
+            }
+            return actualResult;
+        } else {
+
+            String crSb = "?" + components[0];
+            var conditionsB = buildConditions(crSb);
+
+            var crB = new ConditionRecord(conditionsB, runLengths, crSa + " " + components[1]).findArrangements();
+
+            var upper = Math.max(crA, crB);
+            var lower = Math.min(crA, crB);
+
+            var result = lower * upper * upper * upper * upper;
+
+            // LOGGER.info("{} {} {}", line, crSa, crA);
+            // LOGGER.info("{} {} {}", line, crSb, crB);
+            // LOGGER.info("{} {} ", line, result);
+            if (result != actualResult) {
+                LOGGER.info("{} {} {}", line, result, actualResult);
+            }
+            return actualResult;
+        }
+    }
+
     public long findArrangements() {
         var builders = new ArrayDeque<ConditionBuilder>();
         long arrangementCount = 0l;
@@ -122,18 +202,26 @@ public record ConditionRecord(ArrayList<Tuple2<Condition, Integer>> conditions, 
                 var noMoreDamagedConditions = emptyOrUnknown(conditions.stream());
 
                 if (noMoreDamagedConditions && targets.isEmpty()) {
-
+                    // LOGGER.info("{} {}", ConditionRecord.this.rep, rep);
                     arrangementCount++;
                 } else if (noMoreDamagedConditions
-                        && targets instanceof NonEmptyList(var currentTarget, var remainingTargets)
+                        && targets instanceof
+
+                        NonEmptyList(var currentTarget, var remainingTargets)
                         && currentRun == currentTarget
                         && remainingTargets.isEmpty()) {
+
+                    // LOGGER.info("{} {}", ConditionRecord.this.rep, rep);
                     arrangementCount++;
 
                 }
 
-                else if (conditions instanceof NonEmptyList(var c, var remainingConditions)
-                        && targets instanceof NonEmptyList(var targetRun, var remainingTargets)
+                else if (conditions instanceof
+
+                NonEmptyList(var c, var remainingConditions)
+                        && targets instanceof
+
+                        NonEmptyList(var targetRun, var remainingTargets)
                         && currentRun <= targetRun) {
 
                     switch (c.get1()) {
@@ -208,6 +296,7 @@ public record ConditionRecord(ArrayList<Tuple2<Condition, Integer>> conditions, 
 
                 }
             }
+
         }
 
         return arrangementCount;

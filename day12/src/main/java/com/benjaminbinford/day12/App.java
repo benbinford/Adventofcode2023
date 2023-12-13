@@ -10,10 +10,10 @@ import com.benjaminbinford.utils.IO;
  */
 public class App {
 
-    private final List<ConditionRecord> records;
+    private final List<String> lineRecords;
 
     public App(String input) {
-        records = input.lines().map(ConditionRecord::of).toList();
+        lineRecords = input.lines().toList();
     }
 
     public static void main(String[] args) {
@@ -23,12 +23,22 @@ public class App {
 
         final var app = new App(input);
         IO.answer(app.sumArrangements());
+        IO.answer(app.sumExplodedArrangements());
 
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 100_000));
     }
 
+    public long sumExplodedArrangements() {
+        return lineRecords.parallelStream().mapToLong(ConditionRecord::findExplodedArrangements).sum();
+    }
+
     public long sumArrangements() {
-        return records.stream().mapToLong(ConditionRecord::findArrangements).sum();
+        return lineRecords.stream().map(ConditionRecord::of).mapToLong(ConditionRecord::findArrangements).sum();
+    }
+
+    public Long sumExplodedArrangementsLong() {
+        return lineRecords.stream().map(ConditionRecord::explode)
+                .mapToLong(ConditionRecord::findArrangements).sum();
     }
 }

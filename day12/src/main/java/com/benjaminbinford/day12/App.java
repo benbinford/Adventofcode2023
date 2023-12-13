@@ -30,11 +30,12 @@ public class App {
     }
 
     public long sumExplodedArrangements() {
-        return lineRecords.parallelStream().mapToLong(ConditionRecord::findExplodedArrangements).sum();
+        return lineRecords.parallelStream().map(ConditionRecord::explode).mapToLong(ConditionRecord::findArrangements)
+                .sum();
     }
 
     public long sumArrangements() {
-        return lineRecords.stream().map(ConditionRecord::of).mapToLong(ConditionRecord::findArrangements).sum();
+        return lineRecords.parallelStream().map(ConditionRecord::of).mapToLong(ConditionRecord::findArrangements).sum();
     }
 
     public Long sumExplodedArrangementsLong() {

@@ -1,7 +1,7 @@
 package com.benjaminbinford.day16;
 
 import java.util.Optional;
-import java.util.SortedSet;
+import java.util.Set;
 
 import com.benjaminbinford.utils.IO;
 
@@ -55,6 +55,10 @@ public class App {
             this.x = x;
             this.y = y;
             this.dir = dir;
+        }
+
+        int uniqueId() {
+            return y * 1_000_000 + x;
         }
 
         @Override
@@ -119,17 +123,27 @@ public class App {
         }
     }
 
+    interface Path {
+        Tile head();
+    }
+
+    record LinearPath(Tile head, Optional<Tile> next) implements Path {
+    }
+
+    record BranchingPath(Tile head, Optional<Tile> branch1, Optional<Tile> branch2) implements Path {
+    }
+
+    record ExploringPath(Tile head) implements Path {
+    }
+
     class Energizer {
-        SortedSet<Tile> visitedTiles = new java.util.TreeSet<>();
+        Set<Integer> seenSquares = new java.util.HashSet<>();
+        Set<Tile> seenTiles = new java.util.HashSet<>();
+
         int energized = 0;
 
         public boolean everVisited(Tile t) {
-            var set = visitedTiles.headSet(new Tile(t.x, t.y, Dir.SENTINEL));
-            if (set.isEmpty()) {
-                return false;
-            }
-            var t2 = set.last();
-            return t2.x == t.x && t2.y == t.y;
+            return seenSquares.contains(t.uniqueId());
         }
 
         @Override
@@ -145,7 +159,7 @@ public class App {
 
         public int energize(Tile t) {
 
-            if (visitedTiles.contains(t)) {
+            if (seenTiles.contains(t)) {
                 return energized;
             }
 
@@ -153,7 +167,8 @@ public class App {
                 energized++;
             }
 
-            visitedTiles.add(t);
+            seenTiles.add(t);
+            seenSquares.add(t.uniqueId());
 
             switch (grid[t.y][t.x]) {
                 case VERTICAL:

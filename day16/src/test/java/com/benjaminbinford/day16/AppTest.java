@@ -30,4 +30,25 @@ class AppTest {
 
         assertEquals(51, app.energizeMaximum());
     }
+
+    /**
+     * Rigorous Test :-)
+     */
+    @Test
+    void shouldAnswerWithTrue3() {
+        final var input = IO.getResource("com/benjaminbinford/day16/input.txt");
+
+        final var app = new App(input);
+
+        assertEquals(7979, app.energize());
+    }
+
+    @Test
+    void shouldAnswerWithTrue24() {
+        final var input = IO.getResource("com/benjaminbinford/day16/input.txt");
+
+        final var app = new App(input);
+
+        assertEquals(8437, app.energizeMaximum());
+    }
 }

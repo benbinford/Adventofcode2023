@@ -33,11 +33,14 @@ public class App {
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        IO.answer(app.energize());
+        int energy = app.energize();
 
-        IO.answer(app.energizeMaximum());
+        int maxEnergy = app.energizeMaximum();
+
         long elapsedTime = System.nanoTime() - startTime;
-        IO.answer(String.format("Elapsed time: %d", elapsedTime / 100_000));
+        IO.answer(energy);
+        IO.answer(maxEnergy);
+        IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));
     }
 
     enum Dir {

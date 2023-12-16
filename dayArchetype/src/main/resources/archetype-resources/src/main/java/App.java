@@ -21,6 +21,6 @@ public class App
 
         
         long elapsedTime = System.nanoTime() - startTime;
-        IO.answer(String.format("Elapsed time: %d", elapsedTime / 100_000));
+        IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));
     }
 }

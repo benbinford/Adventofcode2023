@@ -5,8 +5,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.typemeta.funcj.tuples.Tuple2;
-
 import com.benjaminbinford.utils.IO;
 
 /**

@@ -2,8 +2,6 @@ package com.benjaminbinford.day15;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
-
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -107,6 +105,6 @@ public class App {
 
     @Override
     public String toString() {
-        return sequence.stream().map(a -> a.toString()).collect(Collectors.joining("\n\n"));
+        return sequence.stream().map(Object::toString).collect(Collectors.joining("\n\n"));
     }
 }

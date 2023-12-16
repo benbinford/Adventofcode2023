@@ -61,6 +61,8 @@ public class App {
         }
 
         int uniqueId() {
+            if (x >= 1_000_000)
+                throw new UnsupportedOperationException("Cannot generate unique id for tile with x >= 1_000_000");
             return y * 1_000_000 + x;
         }
 

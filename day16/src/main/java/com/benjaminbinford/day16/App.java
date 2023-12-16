@@ -35,6 +35,7 @@ public class App {
 
         IO.answer(app.energize());
 
+        IO.answer(app.energizeMaximum());
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 100_000));
     }
@@ -219,5 +220,18 @@ public class App {
 
     public int energize() {
         return new Energizer().energize(new Tile(0, 0, Dir.RIGHT));
+    }
+
+    public int energizeMaximum() {
+        int max = 0;
+        for (var j = 0; j < height; j++) {
+            max = Math.max(max, new Energizer().energize(new Tile(0, j, Dir.RIGHT)));
+            max = Math.max(max, new Energizer().energize(new Tile(width - 1, j, Dir.LEFT)));
+        }
+        for (var i = 0; i < width; i++) {
+            max = Math.max(max, new Energizer().energize(new Tile(i, 0, Dir.DOWN)));
+            max = Math.max(max, new Energizer().energize(new Tile(i, height - 1, Dir.UP)));
+        }
+        return max;
     }
 }

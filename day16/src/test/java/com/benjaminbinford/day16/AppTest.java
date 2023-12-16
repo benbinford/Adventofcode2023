@@ -21,4 +21,13 @@ class AppTest {
 
         assertEquals(46, app.energize());
     }
+
+    @Test
+    void shouldAnswerWithTrue2() {
+        final var input = IO.getResource("com/benjaminbinford/day16/testinput.txt");
+
+        final var app = new App(input);
+
+        assertEquals(51, app.energizeMaximum());
+    }
 }

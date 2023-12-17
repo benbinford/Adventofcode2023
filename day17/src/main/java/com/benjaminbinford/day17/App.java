@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.function.Function;
 
 import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
@@ -219,17 +220,16 @@ public class App {
             } else {
                 newStraightLength = 1;
             }
-            if (newStraightLength < 1 || newStraightLength > 3) {
-                throw new AdventException("Invalid straight length: " + newStraightLength);
-            }
+
             return newStraightLength;
         }
     }
 
-    private static final RelativeDir[] STEP_3_DIRS = new RelativeDir[] { RelativeDir.L, RelativeDir.R };
-    private static final RelativeDir[] STEP_2_DIRS = new RelativeDir[] { RelativeDir.L, RelativeDir.R, RelativeDir.F };
+    private static final RelativeDir[] STEP_TURN = new RelativeDir[] { RelativeDir.L, RelativeDir.R };
+    private static final RelativeDir[] STEP_ALL = new RelativeDir[] { RelativeDir.L, RelativeDir.R, RelativeDir.F };
+    private static final RelativeDir[] STEP_FORWARD = new RelativeDir[] { RelativeDir.F };
 
-    static int nodeIds = 0;
+    int nodeIds = 0;
 
     Map<Node, Node> arena;
 
@@ -316,9 +316,9 @@ public class App {
                 children = new ArrayList<>(3);
                 RelativeDir[] relativeDirs;
                 if (straitLength == 3) {
-                    relativeDirs = STEP_3_DIRS;
+                    relativeDirs = STEP_TURN;
                 } else {
-                    relativeDirs = STEP_2_DIRS;
+                    relativeDirs = STEP_ALL;
                 }
                 for (RelativeDir relativeDir : relativeDirs) {
                     int xDelta = dir.xDelta(relativeDir);
@@ -329,6 +329,77 @@ public class App {
                                 .add(allocNode(this, x + xDelta, y + yDelta,
                                         relativeDir.newStraightLength(straitLength), newDir,
                                         gScore));
+                    }
+                }
+            }
+            return children;
+        }
+
+        List<Node> getChildrenUltra() {
+            if (children == null) {
+                children = new ArrayList<>(3);
+                RelativeDir[] relativeDirs;
+                if (straitLength == 1) {
+                    relativeDirs = STEP_FORWARD;
+                } else if (straitLength < 10) {
+                    relativeDirs = STEP_ALL;
+                } else if (straitLength == 10) {
+                    relativeDirs = STEP_TURN;
+                } else {
+                    throw new AdventException("Invalid strait length: " + straitLength);
+                }
+                for (RelativeDir relativeDir : relativeDirs) {
+                    int xDelta = dir.xDelta(relativeDir);
+                    int yDelta = dir.yDelta(relativeDir);
+                    Dir newDir = dir.newDir(relativeDir);
+                    int newStraightLength;
+
+                    if (relativeDir == RelativeDir.F && straitLength == 1) {
+                        newStraightLength = 4;
+                        if (xDelta != 0) {
+                            xDelta = 3;
+                        } else if (yDelta != 0) {
+                            yDelta = 3;
+                        }
+
+                    } else if (relativeDir == RelativeDir.L || relativeDir == RelativeDir.R) {
+                        newStraightLength = 4;
+                        if (xDelta != 0) {
+                            xDelta = newDir == Dir.E ? 4 : -4;
+                        } else if (yDelta != 0) {
+                            yDelta = newDir == Dir.S ? 4 : -4;
+                        }
+                    } else {
+                        newStraightLength = relativeDir.newStraightLength(straitLength);
+                    }
+
+                    if (x + xDelta >= 0 && x + xDelta < width && y + yDelta >= 0 && y + yDelta < height) {
+                        var currentGScore = gScore;
+                        if (xDelta > 1) {
+                            for (int i = 1; i < xDelta; i++) {
+                                currentGScore += entryWeights[y][x + i];
+                            }
+                        } else if (xDelta < -1) {
+                            for (int i = -1; i > xDelta; i--) {
+                                currentGScore += entryWeights[y][x + i];
+                            }
+                        }
+
+                        else if (yDelta > 1) {
+                            for (int j = 1; j < yDelta; j++) {
+                                currentGScore += entryWeights[y + j][x];
+                            }
+
+                        } else if (yDelta < -11) {
+                            for (int j = -11; j > yDelta; j--) {
+                                currentGScore += entryWeights[y + j][x];
+                            }
+
+                        }
+                        children
+                                .add(allocNode(this, x + xDelta, y + yDelta,
+                                        newStraightLength, newDir,
+                                        currentGScore));
                     }
                 }
             }
@@ -350,7 +421,10 @@ public class App {
         }
     }
 
-    public int heatLoss() {
+    public int heatLoss(Function<Node, List<Node>> getChildren) {
+
+        arena.clear();
+        nodeIds = 0;
 
         PriorityQueue<Node> q = new PriorityQueue<>(Node::gComparison);
 
@@ -358,8 +432,12 @@ public class App {
 
         while (!q.isEmpty()) {
             Node u = q.poll();
+            if (u.processed) {
+                continue;
+            }
+
             u.setProcessed(true);
-            List<Node> list = u.getChildren().stream().filter(n -> !n.getProcessed()).toList();
+            List<Node> list = getChildren.apply(u).stream().filter(n -> !n.getProcessed()).toList();
             q.removeAll(list);
             q.addAll(list);
         }
@@ -367,7 +445,7 @@ public class App {
         var a = new ArrayList<>(arena.keySet().stream().filter(n -> n.x == width - 1 && n.y == height - 1).toList());
         a.sort(Node::gComparison);
 
-        // IO.answer("\n" + displayPath(a.get(0)));
+        IO.answer("\n" + displayPath(a.get(0)));
 
         return a.get(0).getG();
     }
@@ -377,7 +455,7 @@ public class App {
         char[][] display = new char[height][width];
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                display[j][i] = Integer.toString(entryWeights[j][i]).charAt(0);
+                display[j][i] = '.';// Integer.toString(entryWeights[j][i]).charAt(0);
             }
         }
         int gValidation = 0;
@@ -412,20 +490,29 @@ public class App {
             existing.parent = parent;
         }
 
-        if (arena.size() > width * height * 4 * 3) {
-            throw new AdventException("Too many nodes");
-        }
+        // if (arena.size() > width * height * 4 * 3) {
+        // throw new AdventException("Too many nodes");
+        // }
 
+        // IO.answer(String.format("Node %d: (%d,%d) %s Cost %d Straight %d Parent Node
+        // %d",
+        // existing.nodeId, existing.x, existing.y,
+        // existing.dir,
+        // existing.getG(), existing.straitLength, parent.nodeId));
         return existing;
     }
 
     public static void main(String[] args) {
+        // 1063
+        // 1003
+        // 1123
         final var input = IO.getResource("com/benjaminbinford/day17/input.txt");
 
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        IO.answer(app.heatLoss());
+        // IO.answer(app.heatLoss(App.Node::getChildren));
+        IO.answer(app.heatLoss(App.Node::getChildrenUltra));
 
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));

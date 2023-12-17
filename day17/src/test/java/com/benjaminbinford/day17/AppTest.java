@@ -19,6 +19,71 @@ class AppTest {
 
         final var app = new App(input);
 
-        assertEquals(102, app.heatLoss());
+        assertEquals(102, app.heatLoss(App.Node::getChildren));
+    }
+
+    /**
+     * Rigorous Test :-)
+     */
+    @Test
+    void shouldAnswerWithTrueUltra2() {
+        final var input = """
+                111111111111
+                999999999991
+                999999999991
+                999999999991
+                999999999991
+                    """;
+        final var app = new App(input);
+
+        assertEquals(71, app.heatLoss(App.Node::getChildrenUltra));
+    }
+
+    /**
+     * Rigorous Test :-)
+     */
+    @Test
+    void shouldAnswerWithTrueUltra3() {
+        final var input = """
+                111199999999
+                999199999999
+                999199999999
+                999199999999
+                999199999999
+                999199999999
+                999199999999
+                999199999999
+                999199999999
+                999199999999
+                999199999999
+                999111111119
+                    """;
+        final var app = new App(input);
+
+        assertEquals(86, app.heatLoss(App.Node::getChildrenUltra));
+    }
+
+    /**
+     * Rigorous Test :-)
+     */
+    @Test
+    void shouldAnswerWithTrueUltra() {
+        final var input = IO.getResource("com/benjaminbinford/day17/testinput.txt");
+
+        final var app = new App(input);
+
+        assertEquals(94, app.heatLoss(App.Node::getChildrenUltra));
+    }
+
+    /**
+     * Rigorous Test :-)
+     */
+    @Test
+    void shouldAnswerWithTru2() {
+        final var input = IO.getResource("com/benjaminbinford/day17/input.txt");
+
+        final var app = new App(input);
+
+        assertEquals(963, app.heatLoss(App.Node::getChildren));
     }
 }

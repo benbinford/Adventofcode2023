@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import com.benjaminbinford.day16.App.Dir;
+import com.benjaminbinford.day16.App.Energizer;
 import com.benjaminbinford.utils.IO;
 
 /**
@@ -19,7 +21,10 @@ class AppTest {
 
         final var app = new App(input);
 
-        assertEquals(46, app.energize());
+        Energizer energizer = app.new Energizer();
+        energizer.energize(app.cellIndex(0, 0, Dir.RIGHT));
+        IO.answer(energizer);
+        assertEquals(46, energizer.getEnergy());
     }
 
     @Test

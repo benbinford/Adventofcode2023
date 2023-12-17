@@ -1,6 +1,5 @@
 package com.benjaminbinford.day17;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.PriorityQueue;
 
@@ -348,14 +347,13 @@ public class App {
             u.addChildren(minStraight, maxStraight, q);
         }
 
-        var a = new ArrayList<>(arena.keySet().stream()
+        var a = arena.keySet().stream()
                 .filter(n -> n.x == width - 1 && n.y == height - 1 && n.straitLength >= minStraight)
-                .toList());
-        a.sort(Node::gComparison);
+                .min(Node::gComparison).orElseThrow();
 
-        IO.answer("\n" + displayPath(a.get(0)));
+        IO.answer("\n" + displayPath(a));
 
-        return a.get(0).getG();
+        return a.getG();
     }
 
     private String displayPath(Node node) {

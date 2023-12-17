@@ -369,7 +369,7 @@ public class App {
                 .toList());
         a.sort(Node::gComparison);
 
-        // IO.answer("\n" + displayPath(a.get(0)));
+        IO.answer("\n" + displayPath(a.get(0)));
 
         return a.get(0).getG();
     }
@@ -379,22 +379,15 @@ public class App {
         char[][] display = new char[height][width];
         for (int i = 0; i < width; i++) {
             for (int j = 0; j < height; j++) {
-                display[j][i] = '.';// Integer.toString(entryWeights[j][i]).charAt(0);
+                display[j][i] = '.';
             }
         }
-        int gValidation = 0;
-        int nodeCount = 0;
+
         while (node != null) {
-            nodeCount++;
             display[node.y][node.x] = node.dir.toChar();
-            gValidation += entryWeights[node.y][node.x];
-            // IO.answer(String.format("Node %d: %d,%d %s %d %d", node.nodeId, node.x,
-            // node.y, node.dir,
-            // entryWeights[node.y][node.x], node.getG()));
             node = node.parent;
         }
 
-        // IO.answer("Node validation: " + gValidation);
         for (int j = 0; j < height; j++) {
             for (int i = 0; i < width; i++) {
                 sb.append(display[j][i]);

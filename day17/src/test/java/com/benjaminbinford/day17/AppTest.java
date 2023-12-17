@@ -19,7 +19,7 @@ class AppTest {
 
         final var app = new App(input);
 
-        assertEquals(102, app.heatLoss(App.Node::getChildren));
+        assertEquals(102, app.heatLoss(1, 3));
     }
 
     /**
@@ -36,7 +36,7 @@ class AppTest {
                     """;
         final var app = new App(input);
 
-        assertEquals(71, app.heatLoss(App.Node::getChildrenUltra));
+        assertEquals(71, app.heatLoss(4, 10));
     }
 
     /**
@@ -60,7 +60,7 @@ class AppTest {
                     """;
         final var app = new App(input);
 
-        assertEquals(86, app.heatLoss(App.Node::getChildrenUltra));
+        assertEquals(86, app.heatLoss(4, 10));
     }
 
     /**
@@ -72,7 +72,7 @@ class AppTest {
 
         final var app = new App(input);
 
-        assertEquals(94, app.heatLoss(App.Node::getChildrenUltra));
+        assertEquals(94, app.heatLoss(4, 10));
     }
 
     /**
@@ -84,6 +84,18 @@ class AppTest {
 
         final var app = new App(input);
 
-        assertEquals(963, app.heatLoss(App.Node::getChildren));
+        assertEquals(963, app.heatLoss(1, 3));
+    }
+
+    /**
+     * Rigorous Test :-)
+     */
+    @Test
+    void shouldAnswerWithTru4() {
+        final var input = IO.getResource("com/benjaminbinford/day17/input.txt");
+
+        final var app = new App(input);
+
+        assertEquals(1178, app.heatLoss(4, 10));
     }
 }

@@ -1,7 +1,6 @@
 package com.benjaminbinford.day17;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
@@ -240,7 +239,6 @@ public class App {
         int fScore;
         int nodeId;
         boolean processed = false;
-        List<Node> children;
         Node parent;
 
         public void setProcessed(boolean processed) {
@@ -309,29 +307,26 @@ public class App {
             setG(gScoreSoFar + entryWeights[y][x]);
         }
 
-        List<Node> getChildren(int minStraight, int maxStraight) {
-            if (children == null) {
-                children = new ArrayList<>(3);
-                RelativeDir[] relativeDirs;
-                if (straitLength < minStraight) {
-                    relativeDirs = STEP_FORWARD;
-                } else {
-                    relativeDirs = STEP_ALL;
-                }
-                for (RelativeDir relativeDir : relativeDirs) {
-                    int xDelta = dir.xDelta(relativeDir);
-                    int yDelta = dir.yDelta(relativeDir);
-                    Dir newDir = dir.newDir(relativeDir);
-                    if (x + xDelta >= 0 && x + xDelta < width && y + yDelta >= 0 && y + yDelta < height
-                            && straitLength <= maxStraight) {
-                        children
-                                .add(allocNode(this, x + xDelta, y + yDelta,
-                                        relativeDir.newStraightLength(straitLength), newDir,
-                                        gScore));
-                    }
+        void addChildren(int minStraight, int maxStraight, PriorityQueue<Node> q) {
+
+            RelativeDir[] relativeDirs;
+            if (straitLength < minStraight) {
+                relativeDirs = STEP_FORWARD;
+            } else {
+                relativeDirs = STEP_ALL;
+            }
+            for (RelativeDir relativeDir : relativeDirs) {
+                int xDelta = dir.xDelta(relativeDir);
+                int yDelta = dir.yDelta(relativeDir);
+                Dir newDir = dir.newDir(relativeDir);
+                if (x + xDelta >= 0 && x + xDelta < width && y + yDelta >= 0 && y + yDelta < height
+                        && straitLength <= maxStraight) {
+                    allocNode(this, x + xDelta, y + yDelta,
+                            relativeDir.newStraightLength(straitLength), newDir,
+                            gScore, q);
                 }
             }
-            return children;
+
         }
 
         static int fComparison(Node a, Node b) {
@@ -366,18 +361,15 @@ public class App {
             }
 
             u.setProcessed(true);
-            List<Node> list = u.getChildren(minStraight, maxStraight);
-            q.removeAll(list);
-            q.addAll(list);
+            u.addChildren(minStraight, maxStraight, q);
         }
 
         var a = new ArrayList<>(arena.keySet().stream()
-                .filter(n -> n.x == width - 1 && n.y == height - 1 && n.straitLength >= minStraight
-                        && n.straitLength <= maxStraight)
+                .filter(n -> n.x == width - 1 && n.y == height - 1 && n.straitLength >= minStraight)
                 .toList());
         a.sort(Node::gComparison);
 
-        IO.answer("\n" + displayPath(a.get(0)));
+        // IO.answer("\n" + displayPath(a.get(0)));
 
         return a.get(0).getG();
     }
@@ -412,26 +404,20 @@ public class App {
         return sb.toString();
     }
 
-    public Node allocNode(Node parent, int i, int j, int newStraightLength, Dir dir, int gScore) {
+    public void allocNode(Node parent, int i, int j, int newStraightLength, Dir dir, int gScore,
+            PriorityQueue<Node> q) {
         Node n = new Node(i, j, newStraightLength, dir, gScore);
         n.parent = parent;
         Node existing = arena.computeIfAbsent(n, k -> n);
 
         if (existing.getG() > n.getG()) {
             existing.setG(n.getG());
-            existing.parent = parent;
+            q.remove(existing);
+            q.add(existing);
+        } else if (n == existing) {
+            q.add(existing);
         }
 
-        // if (arena.size() > width * height * 4 * 3) {
-        // throw new AdventException("Too many nodes");
-        // }
-
-        // IO.answer(String.format("Node %d: (%d,%d) %s Cost %d Straight %d Parent Node
-        // %d",
-        // existing.nodeId, existing.x, existing.y,
-        // existing.dir,
-        // existing.getG(), existing.straitLength, parent.nodeId));
-        return existing;
     }
 
     public static void main(String[] args) {
@@ -444,7 +430,7 @@ public class App {
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        // IO.answer(app.heatLoss(1, 3));
+        IO.answer(app.heatLoss(1, 3));
         IO.answer(app.heatLoss(4, 10));
 
         long elapsedTime = System.nanoTime() - startTime;

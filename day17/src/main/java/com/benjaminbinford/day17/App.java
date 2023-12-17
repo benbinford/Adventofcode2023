@@ -359,7 +359,9 @@ public class App {
         while (!q.isEmpty()) {
             Node u = q.poll();
             u.setProcessed(true);
-            q.addAll(u.getChildren().stream().filter(n -> !n.getProcessed()).toList());
+            List<Node> list = u.getChildren().stream().filter(n -> !n.getProcessed()).toList();
+            q.removeAll(list);
+            q.addAll(list);
         }
 
         var a = new ArrayList<>(arena.keySet().stream().filter(n -> n.x == width - 1 && n.y == height - 1).toList());

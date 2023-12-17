@@ -249,17 +249,8 @@ public class App {
             return processed;
         }
 
-        int hScore() {
-            return Math.abs(x + 1 - width) + Math.abs(y + 1 - height);
-        }
-
         void setG(int g) {
             this.gScore = g;
-            this.fScore = g + hScore();
-        }
-
-        int getF() {
-            return fScore;
         }
 
         int getG() {
@@ -327,13 +318,6 @@ public class App {
                 }
             }
 
-        }
-
-        static int fComparison(Node a, Node b) {
-            if (a.fScore == b.fScore) {
-                return Integer.compare(a.nodeId, b.nodeId);
-            }
-            return Integer.compare(a.fScore, b.fScore);
         }
 
         static int gComparison(Node a, Node b) {

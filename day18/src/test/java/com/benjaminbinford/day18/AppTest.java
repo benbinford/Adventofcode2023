@@ -22,30 +22,19 @@ class AppTest {
 
         final var app = new App(input);
 
+        // IO.answer(app);
         // assertEquals("""
-        // #######
-        // #.....#
-        // ###...#
-        // ..#...#
-        // ..#...#
-        // ###.###
-        // #...#..
-        // ##..###
-        // .#....#
-        // .######
+        // ╔-----╗
+        // |.....|
+        // ╚-╗...|
+        // ..|...|
+        // ..|...|
+        // ╔-╝.╔-╝
+        // |...|..
+        // ╚╗..╚-╗
+        // .|....|
+        // .╚----╝
         // """, app.toString());
-
-        String outline = app.toString();
-        IO.answer("\n\n" + outline);
-        IO.answer("\n\n" + app.lagoonSize());
-
-        assertEquals(outline.chars().filter(c -> c == '#').count(), app.lagoonSize());
-        app.fillLagoon();
-
-        String filled = app.toString();
-        IO.answer("\n\n" + filled);
-        IO.answer("\n\n" + app.lagoonSize());
-        assertEquals(filled.chars().filter(c -> c == '#').count(), app.lagoonSize());
 
         assertEquals(62l, app.lagoonSize());
     }
@@ -72,8 +61,6 @@ class AppTest {
         final var input = IO.getResource("com/benjaminbinford/day18/input.txt");
 
         final var app = new App(input);
-
-        app.fillLagoon();
 
         assertEquals(46394, app.lagoonSize());
     }

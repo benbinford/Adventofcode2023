@@ -1,13 +1,16 @@
 package com.benjaminbinford.day18;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
+import java.util.SortedMap;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.UnaryOperator;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
+import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
 
 /**
@@ -16,82 +19,156 @@ import com.benjaminbinford.utils.IO;
  */
 public class App {
 
-    static final String NONE = "none";
-
-    static class State {
-        boolean lagoon;
-        String color;
-        String command;
-        long count;
-
-        public State(boolean lagoon, String color) {
-            this.lagoon = lagoon;
-            this.color = color;
-            this.command = NONE;
+    record Line(long start, long end) implements Comparable<Line> {
+        Line(long start, long end) {
+            if (start > end) {
+                this.end = start;
+                this.start = end;
+            } else {
+                this.start = start;
+                this.end = end;
+            }
         }
 
-        public State() {
-            this.lagoon = false;
-            this.color = NONE;
-            this.command = NONE;
+        @Override
+        public int compareTo(Line o) {
+            return Long.compare(start, o.start);
         }
 
-        public void setCommand(String command) {
-            this.command = command;
-        }
-
-        public String getCommand() {
-            return command;
-        }
-
-        public void inc() {
-            count++;
-        }
-
-        public long count() {
-            return count;
+        public long length() {
+            return end - start + 1;
         }
     }
 
-    record Point(int x, int y) {
+    record Point(long x, long y) {
+
+        boolean onHorizontalLine(SortedSet<Line> lines) {
+            return lines.stream().anyMatch(l -> l.start <= x && x <= l.end);
+        }
+
+        boolean onVerticalLine(SortedSet<Line> lines) {
+            return lines.stream().anyMatch(l -> l.start <= y && y <= l.end);
+        }
     }
 
-    Map<Point, State> map = new HashMap<>();
-    List<State> states = new ArrayList<>();
+    enum Bend {
+        UL, UR, DL, DR;
+
+        public char toChar() {
+            return switch (this) {
+                case UL -> '╗'; // never prior
+                case UR -> '╔';
+
+                case DL -> '╝'; // never prio
+                case DR -> '╚';
+            };
+        }
+
+        public boolean cutting(Bend b) {
+            return switch (this) {
+                case UL -> b == DR;
+                case UR -> b == DL;
+                case DL -> b == UR;
+                case DR -> b == UL;
+            };
+        }
+    }
+
+    SortedMap<Long, SortedSet<Line>> verticalLines;
+    SortedMap<Long, SortedSet<Line>> horizontalLines;
+    Map<Point, Bend> intersections;
+
     Point upperLeft;
     Point lowerRight;
 
+    long extra = 0;
+
     enum Dir {
-        U(0, -1), D(0, 1), L(-1, 0), R(1, 0);
+        U, D, L, R;
 
-        private final int xDelta;
-        private final int yDelta;
-
-        Dir(int xDelta, int yDelta) {
-            this.xDelta = xDelta;
-            this.yDelta = yDelta;
-        }
-
-        public Point next(Point point) {
-            return new Point(point.x + xDelta, point.y + yDelta);
-        }
-
-        public Optional<Point> next(Point point, Point upperLeft, Point lowerRight) {
-            if (point.x + xDelta < upperLeft.x || point.x + xDelta > lowerRight.x || point.y + yDelta < upperLeft.y
-                    || point.y + yDelta > lowerRight.y) {
-                return Optional.empty();
-            }
-            return Optional.of(new Point(point.x + xDelta, point.y + yDelta));
+        public boolean isVertical() {
+            return this == U || this == D;
         }
     }
 
-    private State addState(State s) {
-        states.add(s);
-        return s;
+    enum State {
+        INSIDE, OUTSIDE, ONLINE_FROM_OUTSIDE, ONLINE_FROM_INSIDE;
+
+        State toggle() {
+            return this == INSIDE ? OUTSIDE : INSIDE;
+        }
     }
 
     public long lagoonSize() {
-        return states.stream().filter(s -> s.lagoon).mapToLong(s -> s.count).sum();
+
+        long interior = LongStream.rangeClosed(upperLeft.y, lowerRight.y).parallel().map(j -> {
+            long sum = 0l;
+            var state = State.OUTSIDE;
+            var x = 0l;
+            Bend entryBend = null;
+            for (var lines : verticalLines.entrySet()) {
+                var p = new Point(0, j);
+                if (p.onVerticalLine(lines.getValue())) {
+                    State newState;
+                    if (intersections.containsKey(new Point(lines.getKey(), j))) {
+                        var bend = intersections.get(new Point(lines.getKey(), j));
+                        if (bend == Bend.DR || bend == Bend.UR) {
+                            if (state == State.INSIDE) {
+                                newState = State.ONLINE_FROM_INSIDE;
+                            } else {
+                                newState = State.ONLINE_FROM_OUTSIDE;
+                            }
+                            entryBend = bend;
+                        } else if (bend == Bend.UL || bend == Bend.DL) {
+                            assert (entryBend != null);
+
+                            if (state == State.ONLINE_FROM_INSIDE) {
+                                newState = entryBend.cutting(bend) ? State.OUTSIDE : State.INSIDE;
+                            } else {
+                                newState = entryBend.cutting(bend) ? State.INSIDE : State.OUTSIDE;
+                            }
+                            entryBend = null;
+                        } else {
+                            throw new AdventException("Unknown Bend");
+                        }
+                    }
+
+                    else {
+                        newState = state.toggle();
+
+                    }
+
+                    if (newState == State.INSIDE) {
+                        x = lines.getKey() + 1;
+                    } else if (newState == State.OUTSIDE || newState == State.ONLINE_FROM_INSIDE) {
+                        if (state != State.ONLINE_FROM_OUTSIDE && state != State.ONLINE_FROM_INSIDE) {
+                            var amt = lines.getKey() - x;
+
+                            sum += amt;
+                        }
+                    }
+
+                    state = newState;
+
+                }
+
+            }
+            if (j % 1_000_000 == 0) {
+                IO.answer(j);
+            }
+            return sum;
+        }).sum();
+
+        IO.answer(String.format("interior %d to sum", interior));
+
+        long hlinesLength = horizontalLines.values().stream().flatMap(l -> l.stream()).mapToLong(Line::length).sum();
+        IO.answer(String.format("hlinesLength %d to sum", hlinesLength));
+        long vlinesLength = verticalLines.values().stream().flatMap(l -> l.stream()).mapToLong(Line::length).sum();
+        IO.answer(String.format("vlinesLength %d to sum", vlinesLength));
+        long vertices = intersections.size();
+        IO.answer(String.format("vertices %d to sum", vertices / 2));
+        IO.answer(String.format("extra %d to sum", extra));
+        return interior + hlinesLength + vlinesLength - vertices / 2;
     }
 
     public App(String input) {
@@ -100,61 +177,93 @@ public class App {
 
     public App(String input, UnaryOperator<String> translate) {
 
-        int minX = 0;
-        int maxX = 0;
-        int minY = 0;
-        int maxY = 0;
-        Point turtle = new Point(0, 0);
+        verticalLines = new TreeMap<>();
+        horizontalLines = new TreeMap<>();
+        intersections = new HashMap<>();
 
-        State initialState = addState(new State(true, NONE));
-        initialState.inc();
-        map.put(turtle, initialState);
+        long turtleX = 0;
+        long turtleY = 0;
 
-        for (var line : input.split("\n")) {
+        var lines = input.split("\n");
+
+        var seedParts = translate.apply(lines[lines.length - 1]).split(" ");
+        Dir lastLineDir = Dir.valueOf(seedParts[0]);
+        seedParts = translate.apply(lines[0]).split(" ");
+        Dir firstLineDir = Dir.valueOf(seedParts[0]);
+        if (firstLineDir == Dir.R || firstLineDir == Dir.L) {
+            extra = 1l;
+        } else {
+            extra = 0l;
+        }
+        for (var i = 0; i < lines.length; i++) {
+            var line = lines[i];
             var parts = translate.apply(line).split(" ");
-            var color = parts[2];
-            var distance = Integer.parseInt(parts[1]);
+            var distance = Long.parseLong(parts[1]);
             var dir = Dir.valueOf(parts[0]);
-            var state = addState(new State(true, color));
-            state.setCommand(line);
-            for (var i = 0; i < distance; i++) {
-                turtle = dir.next(turtle);
-                if (!map.containsKey(turtle)) {
-                    state.inc();
-                }
-                map.put(turtle, state);
-            }
 
-            minX = Math.min(minX, turtle.x);
-            maxX = Math.max(maxX, turtle.x);
-            minY = Math.min(minY, turtle.y);
-            maxY = Math.max(maxY, turtle.y);
-        }
+            var priorLineDir = i == 0 ? lastLineDir : Dir.valueOf(translate.apply(lines[i - 1]).split(" ")[0]);
+            var nextLineDir = i == lines.length - 1 ? firstLineDir
+                    : Dir.valueOf(translate.apply(lines[i + 1]).split(" ")[0]);
 
-        upperLeft = new Point(minX, minY);
-        lowerRight = new Point(maxX, maxY);
+            if (dir.isVertical()) {
+                var lineSet = verticalLines.computeIfAbsent(turtleX, k -> new TreeSet<>());
+                long inc = dir == Dir.D ? 1 : -1;
+                var l = new Line(turtleY, turtleY + inc * distance);
+                lineSet.add(l);
+                if (turtleY == l.start) {
+                    intersections.put(new Point(turtleX, l.start), priorLineDir == Dir.L ? Bend.UR : Bend.UL);
+                    intersections.put(new Point(turtleX, l.end), nextLineDir == Dir.R ? Bend.DR : Bend.DL);
 
-    }
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        for (var j = upperLeft.y; j <= lowerRight.y; j++) {
-            for (var i = upperLeft.x; i <= lowerRight.x; i++) {
-                var point = new Point(i, j);
-                var state = map.get(point);
-                if (state == null) {
-                    sb.append('?');
-                } else if (state.lagoon) {
-                    sb.append('#');
+                    turtleY = l.end;
                 } else {
-                    sb.append(".");
+                    intersections.put(new Point(turtleX, l.end), priorLineDir == Dir.L ? Bend.DR : Bend.DL);
+                    intersections.put(new Point(turtleX, l.start), nextLineDir == Dir.R ? Bend.UR : Bend.UL);
+                    turtleY = l.start;
+                }
+
+            } else {
+                var lineSet = horizontalLines.computeIfAbsent(turtleY, k -> new TreeSet<>());
+                long inc = dir == Dir.R ? 1 : -1;
+                var l = new Line(turtleX + inc, turtleX + inc * distance);
+                lineSet.add(l);
+                if (turtleX + inc == l.start) {
+                    turtleX = l.end;
+                } else {
+                    turtleX = l.start;
                 }
             }
-            sb.append('\n');
+
         }
-        return sb.toString();
+        upperLeft = new Point(verticalLines.firstKey(), horizontalLines.firstKey());
+        lowerRight = new Point(verticalLines.lastKey(), horizontalLines.lastKey());
     }
+
+    // @Override
+    // public String toString() {
+    // StringBuilder sb = new StringBuilder();
+    // for (var j = upperLeft.y; j <= lowerRight.y; j++) {
+    // for (var i = upperLeft.x; i <= lowerRight.x; i++) {
+    // var point = new Point(i, j);
+    // SortedSet<Line> verts = verticalLines.get(point.x);
+    // SortedSet<Line> horzs = horizontalLines.get(point.y);
+    // if (intersections.containsKey(point)) {
+    // sb.append(intersections.get(point).toChar());
+
+    // } else if (verts != null && point.onVerticalLine(verts)) {
+    // sb.append('|');
+
+    // } else if (horzs != null && point.onHorizontalLine(horzs)) {
+    // sb.append('-');
+
+    // } else {
+    // sb.append(".");
+    // }
+    // }
+    // sb.append('\n');
+    // }
+    // return sb.toString();
+
+    // }
 
     public static String translateInstruction(String line) {
         var parts = line.split(" ");
@@ -176,60 +285,16 @@ public class App {
         final var input = IO.getResource("com/benjaminbinford/day18/input.txt");
 
         long startTime = System.nanoTime();
-        final var app = new App(input, App::translateInstruction);
-        IO.answer(app.upperLeft);
-        IO.answer(app.lowerRight);
+        final var app1 = new App(input);
 
-        // app.fillLagoon();
-        // IO.answer(app.lagoonSize());
+        IO.answer(app1.lagoonSize());
+
+        final var app = new App(input, App::translateInstruction);
+
+        IO.answer(app.lagoonSize());
 
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));
     }
 
-    public void fillLagoon() {
-
-        var groundPresent = true;
-        while (groundPresent) {
-            groundPresent = false;
-            for (var j = upperLeft.y; j <= lowerRight.y; j++) {
-                for (var i = upperLeft.x; i <= lowerRight.x; i++) {
-                    var point = new Point(i, j);
-                    if (map.containsKey(point)) {
-                        continue;
-                    }
-                    var state = addState(new State(true, NONE));
-                    floodFrom(point, state);
-                    groundPresent = true;
-                }
-            }
-        }
-    }
-
-    private void floodFrom(Point initial, State state) {
-
-        ArrayList<Point> nextPoints = new ArrayList<>();
-        nextPoints.add(initial);
-        while (!nextPoints.isEmpty()) {
-            var point = nextPoints.removeLast();
-            if (map.containsKey(point)) {
-                continue;
-            }
-            map.put(point, state);
-            state.inc();
-            if (point.x <= upperLeft.x || point.x >= lowerRight.x || point.y <= upperLeft.y
-                    || point.y >= lowerRight.y) {
-                // we touched the edge
-                state.lagoon = false;
-            }
-            for (var dir : Dir.values()) {
-                var next = dir.next(point, upperLeft, lowerRight);
-                if (next.isEmpty() || map.containsKey(next.get())) {
-                    continue;
-                }
-                nextPoints.add(next.get());
-            }
-        }
-
-    }
 }

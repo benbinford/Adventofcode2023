@@ -8,7 +8,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.UnaryOperator;
-import java.util.stream.LongStream;
 
 import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
@@ -103,16 +102,22 @@ public class App {
 
     public long lagoonSize() {
 
-        long interior = LongStream.rangeClosed(upperLeft.y, lowerRight.y).parallel().map(j -> {
+        // long interior = LongStream.rangeClosed(upperLeft.y,
+        // lowerRight.y).parallel().map(j -> {
+        long interior = 0l;
+        var j = upperLeft.y;
+        while (j <= lowerRight.y) {
             long sum = 0l;
             var state = State.OUTSIDE;
             var x = 0l;
             Bend entryBend = null;
+            boolean sawIntersection = false;
             for (var lines : verticalLines.entrySet()) {
                 var p = new Point(0, j);
                 if (p.onVerticalLine(lines.getValue())) {
                     State newState;
                     if (intersections.containsKey(new Point(lines.getKey(), j))) {
+                        sawIntersection = true;
                         var bend = intersections.get(new Point(lines.getKey(), j));
                         if (bend == Bend.DR || bend == Bend.UR) {
                             if (state == State.INSIDE) {
@@ -155,11 +160,36 @@ public class App {
                 }
 
             }
-            if (j % 1_000_000 == 0) {
-                IO.answer(j);
+
+            interior += sum;
+
+            if (!sawIntersection) {
+                long nextJ = findNextVerticalIntersection(j + 1);
+                /*
+                 * ╔-----╗
+                 * |.....|
+                 * ╚-╗...|
+                 * 
+                 * j = 2
+                 * nextJ = 3
+                 * 
+                 * ╔-----╗
+                 * |.....|
+                 * |.....|
+                 * ╚-╗...|
+                 * 
+                 * j = 2
+                 * nextJ = 4
+                 * *
+                 * 
+                 */
+
+                interior += (nextJ - j - 1) * sum;
+                j = nextJ;
+            } else {
+                j++;
             }
-            return sum;
-        }).sum();
+        }
 
         IO.answer(String.format("interior %d to sum", interior));
 
@@ -170,6 +200,16 @@ public class App {
         long vertices = intersections.size();
         IO.answer(String.format("vertices %d to sum", vertices / 2));
         return interior + hlinesLength + vlinesLength - vertices / 2;
+    }
+
+    private long findNextVerticalIntersection(long j) {
+
+        SortedMap<Long, SortedSet<Line>> tailMap = horizontalLines.tailMap(j);
+        if (tailMap.isEmpty()) {
+            return lowerRight.y + 1;
+        } else {
+            return tailMap.firstKey();
+        }
     }
 
     public App(String input) {

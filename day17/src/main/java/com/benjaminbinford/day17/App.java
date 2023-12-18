@@ -1,10 +1,12 @@
 package com.benjaminbinford.day17;
 
-import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.List;
+import java.util.function.Predicate;
 
 import com.benjaminbinford.utils.AdventException;
+import com.benjaminbinford.utils.Dijkstra;
 import com.benjaminbinford.utils.IO;
+import com.benjaminbinford.utils.IntWeight;
 
 /**
  * Hello world!
@@ -28,7 +30,6 @@ public class App {
             }
         }
 
-        arena = new java.util.HashMap<>();
     }
 
     enum Dir {
@@ -225,138 +226,10 @@ public class App {
     private static final RelativeDir[] STEP_ALL = new RelativeDir[] { RelativeDir.L, RelativeDir.R, RelativeDir.F };
     private static final RelativeDir[] STEP_FORWARD = new RelativeDir[] { RelativeDir.F };
 
-    int nodeIds = 0;
-
-    Map<Node, Node> arena;
-
-    class Node {
-        int x;
-        int y;
-        int straitLength;
-        Dir dir;
-        int gScore;
-        int fScore;
-        int nodeId;
-        boolean processed = false;
-        Node parent;
-
-        public void setProcessed(boolean processed) {
-            this.processed = processed;
-        }
-
-        public boolean getProcessed() {
-            return processed;
-        }
-
-        void setG(int g) {
-            this.gScore = g;
-        }
-
-        int getG() {
-            return gScore;
-        }
-
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + x;
-            result = prime * result + y;
-            result = prime * result + straitLength;
-            result = prime * result + ((dir == null) ? 0 : dir.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            Node other = (Node) obj;
-            if (x != other.x)
-                return false;
-            if (y != other.y)
-                return false;
-            if (straitLength != other.straitLength)
-                return false;
-            if (dir != other.dir)
-                return false;
-            return true;
-        }
-
-        Node(int x, int y, int straitLength, Dir dir, int gScoreSoFar) {
-            this.x = x;
-            this.y = y;
-            this.straitLength = straitLength;
-            this.dir = dir;
-            this.nodeId = nodeIds++;
-
-            setG(gScoreSoFar + entryWeights[y][x]);
-        }
-
-        void addChildren(int minStraight, int maxStraight, PriorityQueue<Node> q) {
-
-            RelativeDir[] relativeDirs;
-            if (straitLength < minStraight) {
-                relativeDirs = STEP_FORWARD;
-            } else {
-                relativeDirs = STEP_ALL;
-            }
-            for (RelativeDir relativeDir : relativeDirs) {
-                int xDelta = dir.xDelta(relativeDir);
-                int yDelta = dir.yDelta(relativeDir);
-                Dir newDir = dir.newDir(relativeDir);
-                if (x + xDelta >= 0 && x + xDelta < width && y + yDelta >= 0 && y + yDelta < height
-                        && straitLength <= maxStraight) {
-                    allocNode(this, x + xDelta, y + yDelta,
-                            relativeDir.newStraightLength(straitLength), newDir,
-                            gScore, q);
-                }
-            }
-
-        }
-
-        static int gComparison(Node a, Node b) {
-            if (a.gScore == b.gScore) {
-                return Integer.compare(a.nodeId, b.nodeId);
-            }
-            return Integer.compare(a.gScore, b.gScore);
-        }
+    record CrucibleVertex(int x, int y, int straitLength, Dir dir) {
     }
 
-    public int heatLoss(int minStraight, int maxStraight) {
-
-        arena.clear();
-        nodeIds = 0;
-
-        PriorityQueue<Node> q = new PriorityQueue<>(Node::gComparison);
-
-        q.add(new Node(0, 0, 1, Dir.E, -entryWeights[0][0]));
-        q.add(new Node(0, 0, 1, Dir.S, -entryWeights[0][0]));
-
-        while (!q.isEmpty()) {
-            Node u = q.poll();
-            if (u.processed) {
-                continue;
-            }
-
-            u.setProcessed(true);
-            u.addChildren(minStraight, maxStraight, q);
-        }
-
-        var a = arena.keySet().stream()
-                .filter(n -> n.x == width - 1 && n.y == height - 1 && n.straitLength >= minStraight)
-                .min(Node::gComparison).orElseThrow();
-
-        IO.answer("\n" + displayPath(a));
-
-        return a.getG();
-    }
-
-    private String displayPath(Node node) {
+    private String displayPath(List<CrucibleVertex> path) {
         StringBuilder sb = new StringBuilder();
         char[][] display = new char[height][width];
         for (int i = 0; i < width; i++) {
@@ -365,9 +238,8 @@ public class App {
             }
         }
 
-        while (node != null) {
+        for (var node : path) {
             display[node.y][node.x] = node.dir.toChar();
-            node = node.parent;
         }
 
         for (int j = 0; j < height; j++) {
@@ -379,19 +251,42 @@ public class App {
         return sb.toString();
     }
 
-    public void allocNode(Node parent, int i, int j, int newStraightLength, Dir dir, int gScore,
-            PriorityQueue<Node> q) {
-        Node n = new Node(i, j, newStraightLength, dir, gScore);
-        n.parent = parent;
-        Node existing = arena.computeIfAbsent(n, k -> n);
+    public int heatLoss(int minStraight, int maxStraight) {
 
-        if (existing.getG() > n.getG()) {
-            existing.setG(n.getG());
-            q.remove(existing);
-            q.add(existing);
-        } else if (n == existing) {
-            q.add(existing);
-        }
+        var dijkstra = new Dijkstra<CrucibleVertex, IntWeight>((v, add) -> {
+
+            RelativeDir[] relativeDirs;
+            if (v.straitLength < minStraight) {
+                relativeDirs = STEP_FORWARD;
+            } else {
+                relativeDirs = STEP_ALL;
+            }
+            for (RelativeDir relativeDir : relativeDirs) {
+                int xDelta = v.dir.xDelta(relativeDir);
+                int yDelta = v.dir.yDelta(relativeDir);
+                Dir newDir = v.dir.newDir(relativeDir);
+                var newX = v.x + xDelta;
+                var newY = v.y + yDelta;
+                var newStraightLength = relativeDir.newStraightLength(v.straitLength);
+                if (newX >= 0 && newX < width && newY >= 0 && newY < height
+                        && newStraightLength <= maxStraight) {
+                    add.accept(new CrucibleVertex(newX, newY, newStraightLength, newDir),
+                            new IntWeight(entryWeights[newY][newX]));
+                }
+            }
+
+        });
+
+        dijkstra.addVertex(new CrucibleVertex(0, 0, 1, Dir.E), new IntWeight(0));
+        dijkstra.addVertex(new CrucibleVertex(0, 0, 1, Dir.S), new IntWeight(0));
+
+        dijkstra.calculate();
+
+        Predicate<CrucibleVertex> goal = n -> n.x == width - 1 && n.y == height - 1 && n.straitLength >= minStraight;
+
+        IO.answer(displayPath(dijkstra.getPath(goal)));
+
+        return dijkstra.findMin(goal).weight();
 
     }
 

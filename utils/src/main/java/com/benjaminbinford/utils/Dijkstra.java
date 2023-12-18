@@ -1,6 +1,7 @@
 package com.benjaminbinford.utils;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
@@ -13,7 +14,7 @@ public class Dijkstra<V, E extends Weight<E>> {
 
     Neighbors<V, E> neighbors;
 
-    PriorityQueue<Node<V, E>> q = new PriorityQueue<>(Node::gComparison);
+    PriorityQueue<Node<V, E>> q = new PriorityQueue<>();
 
     public Dijkstra(Neighbors<V, E> neighbors) {
         this.arena = new java.util.HashMap<>();
@@ -40,7 +41,7 @@ public class Dijkstra<V, E extends Weight<E>> {
     private Node<V, E> findMinNode(Predicate<V> goal) {
         return arena.values().stream()
                 .filter(n -> goal.test(n.vertex))
-                .min(Node::gComparison).orElseThrow();
+                .min(Comparator.naturalOrder()).orElseThrow();
     }
 
     public void calculate() {

@@ -1,6 +1,8 @@
 package com.benjaminbinford.utils;
 
-class Node<V, E extends Weight<E>> {
+import java.util.Objects;
+
+class Node<V, E extends Weight<E>> implements Comparable<Node<V, E>> {
     V vertex;
     E gScore;
     int nodeId;
@@ -23,33 +25,36 @@ class Node<V, E extends Weight<E>> {
         return gScore;
     }
 
-    @Override
-    public int hashCode() {
-        return vertex.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj)
-            return true;
-        if (obj == null)
-            return false;
-        if (getClass() != obj.getClass())
-            return false;
-        Node<?, ?> other = (Node<?, ?>) obj;
-        return vertex.equals(other.vertex);
-    }
-
     Node(V vertex, E gScore, int nodeId) {
         this.vertex = vertex;
         this.nodeId = nodeId;
         this.gScore = gScore;
     }
 
-    static <V, E extends Weight<E>> int gComparison(Node<V, E> a, Node<V, E> b) {
-        if (a.gScore == b.gScore) {
-            return Integer.compare(a.nodeId, b.nodeId);
+    @Override
+    public int compareTo(Node<V, E> o) {
+        if (this.gScore == o.gScore) {
+            return Integer.compare(this.nodeId, o.nodeId);
         }
-        return a.gScore.compareTo(b.gScore);
+        return this.gScore.compareTo(o.gScore);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(gScore, nodeId);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
+        Node<?, ?> other = (Node<?, ?>) obj;
+        return Objects.equals(gScore, other.gScore) &&
+                nodeId == other.nodeId;
+    }
+
 }

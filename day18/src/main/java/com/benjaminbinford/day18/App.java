@@ -87,6 +87,10 @@ public class App {
         public boolean isVertical() {
             return this == U || this == D;
         }
+
+        public long inc() {
+            return this == D || this == R ? 1 : -1;
+        }
     }
 
     enum State {
@@ -203,7 +207,7 @@ public class App {
 
             if (line.dir().isVertical()) {
                 var lineSet = verticalLines.computeIfAbsent(turtleX, k -> new TreeSet<>());
-                long inc = line.dir() == Dir.D ? 1 : -1;
+                long inc = line.dir().inc();
                 var l = new Line(turtleY, turtleY + inc * line.distance());
                 lineSet.add(l);
                 if (turtleY == l.start) {
@@ -219,7 +223,7 @@ public class App {
 
             } else {
                 var lineSet = horizontalLines.computeIfAbsent(turtleY, k -> new TreeSet<>());
-                long inc = line.dir() == Dir.R ? 1 : -1;
+                long inc = line.dir().inc();
                 var l = new Line(turtleX + inc, turtleX + inc * line.distance());
                 lineSet.add(l);
                 if (turtleX + inc == l.start) {

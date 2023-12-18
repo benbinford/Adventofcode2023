@@ -1,5 +1,6 @@
 package com.benjaminbinford.day18;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.SortedMap;
@@ -7,7 +8,6 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.UnaryOperator;
-import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 
 import com.benjaminbinford.utils.AdventException;
@@ -80,8 +80,6 @@ public class App {
 
     Point upperLeft;
     Point lowerRight;
-
-    long extra = 0;
 
     enum Dir {
         U, D, L, R;
@@ -167,12 +165,18 @@ public class App {
         IO.answer(String.format("vlinesLength %d to sum", vlinesLength));
         long vertices = intersections.size();
         IO.answer(String.format("vertices %d to sum", vertices / 2));
-        IO.answer(String.format("extra %d to sum", extra));
         return interior + hlinesLength + vlinesLength - vertices / 2;
     }
 
     public App(String input) {
         this(input, s -> s);
+    }
+
+    record Command(Dir dir, long distance) {
+        public static Command of(String s) {
+            var parts = s.split(" ");
+            return new Command(Dir.valueOf(parts[0]), Long.parseLong(parts[1]));
+        }
     }
 
     public App(String input, UnaryOperator<String> translate) {
@@ -184,31 +188,23 @@ public class App {
         long turtleX = 0;
         long turtleY = 0;
 
-        var lines = input.split("\n");
+        var lineReps = input.split("\n");
+        var lines = Arrays.stream(lineReps).map(translate).map(Command::of).toArray(Command[]::new);
 
-        var seedParts = translate.apply(lines[lines.length - 1]).split(" ");
-        Dir lastLineDir = Dir.valueOf(seedParts[0]);
-        seedParts = translate.apply(lines[0]).split(" ");
-        Dir firstLineDir = Dir.valueOf(seedParts[0]);
-        if (firstLineDir == Dir.R || firstLineDir == Dir.L) {
-            extra = 1l;
-        } else {
-            extra = 0l;
-        }
+        Dir finalLineDir = lines[lines.length - 1].dir();
+        Dir firstLineDir = lines[0].dir();
+
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i];
-            var parts = translate.apply(line).split(" ");
-            var distance = Long.parseLong(parts[1]);
-            var dir = Dir.valueOf(parts[0]);
 
-            var priorLineDir = i == 0 ? lastLineDir : Dir.valueOf(translate.apply(lines[i - 1]).split(" ")[0]);
+            var priorLineDir = i == 0 ? finalLineDir : lines[i - 1].dir();
             var nextLineDir = i == lines.length - 1 ? firstLineDir
-                    : Dir.valueOf(translate.apply(lines[i + 1]).split(" ")[0]);
+                    : lines[i + 1].dir();
 
-            if (dir.isVertical()) {
+            if (line.dir().isVertical()) {
                 var lineSet = verticalLines.computeIfAbsent(turtleX, k -> new TreeSet<>());
-                long inc = dir == Dir.D ? 1 : -1;
-                var l = new Line(turtleY, turtleY + inc * distance);
+                long inc = line.dir() == Dir.D ? 1 : -1;
+                var l = new Line(turtleY, turtleY + inc * line.distance());
                 lineSet.add(l);
                 if (turtleY == l.start) {
                     intersections.put(new Point(turtleX, l.start), priorLineDir == Dir.L ? Bend.UR : Bend.UL);
@@ -223,8 +219,8 @@ public class App {
 
             } else {
                 var lineSet = horizontalLines.computeIfAbsent(turtleY, k -> new TreeSet<>());
-                long inc = dir == Dir.R ? 1 : -1;
-                var l = new Line(turtleX + inc, turtleX + inc * distance);
+                long inc = line.dir() == Dir.R ? 1 : -1;
+                var l = new Line(turtleX + inc, turtleX + inc * line.distance());
                 lineSet.add(l);
                 if (turtleX + inc == l.start) {
                     turtleX = l.end;
@@ -238,32 +234,31 @@ public class App {
         lowerRight = new Point(verticalLines.lastKey(), horizontalLines.lastKey());
     }
 
-    // @Override
-    // public String toString() {
-    // StringBuilder sb = new StringBuilder();
-    // for (var j = upperLeft.y; j <= lowerRight.y; j++) {
-    // for (var i = upperLeft.x; i <= lowerRight.x; i++) {
-    // var point = new Point(i, j);
-    // SortedSet<Line> verts = verticalLines.get(point.x);
-    // SortedSet<Line> horzs = horizontalLines.get(point.y);
-    // if (intersections.containsKey(point)) {
-    // sb.append(intersections.get(point).toChar());
+    public String visualize() {
+        StringBuilder sb = new StringBuilder();
+        for (var j = upperLeft.y; j <= lowerRight.y; j++) {
+            for (var i = upperLeft.x; i <= lowerRight.x; i++) {
+                var point = new Point(i, j);
+                SortedSet<Line> verts = verticalLines.get(point.x);
+                SortedSet<Line> horzs = horizontalLines.get(point.y);
+                if (intersections.containsKey(point)) {
+                    sb.append(intersections.get(point).toChar());
 
-    // } else if (verts != null && point.onVerticalLine(verts)) {
-    // sb.append('|');
+                } else if (verts != null && point.onVerticalLine(verts)) {
+                    sb.append('|');
 
-    // } else if (horzs != null && point.onHorizontalLine(horzs)) {
-    // sb.append('-');
+                } else if (horzs != null && point.onHorizontalLine(horzs)) {
+                    sb.append('-');
 
-    // } else {
-    // sb.append(".");
-    // }
-    // }
-    // sb.append('\n');
-    // }
-    // return sb.toString();
+                } else {
+                    sb.append(".");
+                }
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
 
-    // }
+    }
 
     public static String translateInstruction(String line) {
         var parts = line.split(" ");

@@ -100,6 +100,51 @@ public class App {
         }
     }
 
+    record StateValue(State state, Bend entryBend, boolean sawIntersection) {
+
+        static StateValue initial() {
+            return new StateValue(State.OUTSIDE, null, false);
+        }
+
+    }
+
+    StateValue nextStateValue(StateValue stateValue, Map.Entry<Long, SortedSet<Line>> lines, long j) {
+        boolean sawIntersection = stateValue.sawIntersection();
+
+        State state = stateValue.state();
+        State newState;
+        Bend entryBend = stateValue.entryBend();
+        if (intersections.containsKey(new Point(lines.getKey(), j))) {
+            sawIntersection = true;
+            var bend = intersections.get(new Point(lines.getKey(), j));
+            if (bend == Bend.DR || bend == Bend.UR) {
+                if (state == State.INSIDE) {
+                    newState = State.ONLINE_FROM_INSIDE;
+                } else {
+                    newState = State.ONLINE_FROM_OUTSIDE;
+                }
+                entryBend = bend;
+            } else if (bend == Bend.UL || bend == Bend.DL) {
+                assert (entryBend != null);
+
+                if (state == State.ONLINE_FROM_INSIDE) {
+                    newState = entryBend.cutting(bend) ? State.OUTSIDE : State.INSIDE;
+                } else {
+                    newState = entryBend.cutting(bend) ? State.INSIDE : State.OUTSIDE;
+                }
+                entryBend = null;
+            } else {
+                throw new AdventException("Unknown Bend");
+            }
+        }
+
+        else {
+            newState = state.toggle();
+
+        }
+        return new StateValue(newState, entryBend, sawIntersection);
+    }
+
     public long lagoonSize() {
 
         // long interior = LongStream.rangeClosed(upperLeft.y,
@@ -108,51 +153,21 @@ public class App {
         var j = upperLeft.y;
         while (j <= lowerRight.y) {
             long sum = 0l;
-            var state = State.OUTSIDE;
+            var state = StateValue.initial();
             var x = 0l;
-            Bend entryBend = null;
-            boolean sawIntersection = false;
             for (var lines : verticalLines.entrySet()) {
                 var p = new Point(0, j);
                 if (p.onVerticalLine(lines.getValue())) {
-                    State newState;
-                    if (intersections.containsKey(new Point(lines.getKey(), j))) {
-                        sawIntersection = true;
-                        var bend = intersections.get(new Point(lines.getKey(), j));
-                        if (bend == Bend.DR || bend == Bend.UR) {
-                            if (state == State.INSIDE) {
-                                newState = State.ONLINE_FROM_INSIDE;
-                            } else {
-                                newState = State.ONLINE_FROM_OUTSIDE;
-                            }
-                            entryBend = bend;
-                        } else if (bend == Bend.UL || bend == Bend.DL) {
-                            assert (entryBend != null);
+                    StateValue newState = nextStateValue(state, lines, j);
 
-                            if (state == State.ONLINE_FROM_INSIDE) {
-                                newState = entryBend.cutting(bend) ? State.OUTSIDE : State.INSIDE;
-                            } else {
-                                newState = entryBend.cutting(bend) ? State.INSIDE : State.OUTSIDE;
-                            }
-                            entryBend = null;
-                        } else {
-                            throw new AdventException("Unknown Bend");
-                        }
-                    }
-
-                    else {
-                        newState = state.toggle();
-
-                    }
-
-                    if (newState == State.INSIDE) {
+                    if (newState.state() == State.INSIDE) {
                         x = lines.getKey() + 1;
-                    } else if (newState == State.OUTSIDE || newState == State.ONLINE_FROM_INSIDE) {
-                        if (state != State.ONLINE_FROM_OUTSIDE && state != State.ONLINE_FROM_INSIDE) {
-                            var amt = lines.getKey() - x;
+                    } else if ((newState.state() == State.OUTSIDE || newState.state() == State.ONLINE_FROM_INSIDE)
+                            && state.state() != State.ONLINE_FROM_OUTSIDE
+                            && state.state() != State.ONLINE_FROM_INSIDE) {
+                        var amt = lines.getKey() - x;
 
-                            sum += amt;
-                        }
+                        sum += amt;
                     }
 
                     state = newState;
@@ -163,7 +178,7 @@ public class App {
 
             interior += sum;
 
-            if (!sawIntersection) {
+            if (!state.sawIntersection) {
                 long nextJ = findNextVerticalIntersection(j + 1);
                 /*
                  * ╔-----╗
@@ -193,13 +208,17 @@ public class App {
 
         IO.answer(String.format("interior %d to sum", interior));
 
-        long hlinesLength = horizontalLines.values().stream().flatMap(l -> l.stream()).mapToLong(Line::length).sum();
+        long hlinesLength = getLinesLength(horizontalLines);
         IO.answer(String.format("hlinesLength %d to sum", hlinesLength));
-        long vlinesLength = verticalLines.values().stream().flatMap(l -> l.stream()).mapToLong(Line::length).sum();
+        long vlinesLength = getLinesLength(verticalLines);
         IO.answer(String.format("vlinesLength %d to sum", vlinesLength));
         long vertices = intersections.size();
         IO.answer(String.format("vertices %d to sum", vertices / 2));
         return interior + hlinesLength + vlinesLength - vertices / 2;
+    }
+
+    private long getLinesLength(SortedMap<Long, SortedSet<Line>> lines) {
+        return lines.values().stream().flatMap(l -> l.stream()).mapToLong(Line::length).sum();
     }
 
     private long findNextVerticalIntersection(long j) {

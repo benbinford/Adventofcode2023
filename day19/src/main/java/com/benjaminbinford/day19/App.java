@@ -46,12 +46,10 @@ public class App {
             }
 
             @Override
-            public PartRange[] split(PartRange ruleRange, String prop, int value) {
+            public Range[] split(Range myRange, int value) {
 
-                final var myRange = ruleRange.ranges.get(prop);
-
-                var range1 = new PartRange(new HashMap<>(ruleRange.ranges));
-                var rangeRest = new PartRange(new HashMap<>(ruleRange.ranges));
+                var range1 = myRange;
+                var rangeRest = myRange;
 
                 // 0 1 2 3 4 5 6 7 8 9 10
                 // o < >
@@ -59,8 +57,8 @@ public class App {
                     rangeRest = null;
                 } else if (value >= myRange.min && value < myRange.max) {
 
-                    range1.ranges.put(prop, Range.of(value + 1, myRange.max));
-                    rangeRest.ranges.put(prop, Range.of(myRange.min, value));
+                    range1 = Range.of(value + 1, myRange.max);
+                    rangeRest = Range.of(myRange.min, value);
 
                 } else if (value >= myRange.max) {
                     range1 = null;
@@ -68,7 +66,7 @@ public class App {
                     assert (false);
                 }
 
-                return new PartRange[] { range1, rangeRest };
+                return new Range[] { range1, rangeRest };
             }
         },
         LT {
@@ -78,12 +76,9 @@ public class App {
             }
 
             @Override
-            public PartRange[] split(PartRange ruleRange, String prop, int value) {
-
-                final var myRange = ruleRange.ranges.get(prop);
-
-                var range1 = new PartRange(new HashMap<>(ruleRange.ranges));
-                var rangeRest = new PartRange(new HashMap<>(ruleRange.ranges));
+            protected Range[] split(Range myRange, int value) {
+                var range1 = myRange;
+                var rangeRest = myRange;
 
                 // 0 1 2 3 4 5 6 7 8 9 10
                 // o < >
@@ -91,8 +86,8 @@ public class App {
                     rangeRest = null;
                 } else if (value > myRange.min && value <= myRange.max) {
 
-                    range1.ranges.put(prop, Range.of(myRange.min, value - 1));
-                    rangeRest.ranges.put(prop, Range.of(value, myRange.max));
+                    range1 = Range.of(myRange.min, value - 1);
+                    rangeRest = Range.of(value, myRange.max);
 
                 } else if (value <= myRange.min) {
                     range1 = null;
@@ -100,13 +95,36 @@ public class App {
                     assert (false);
                 }
 
-                return new PartRange[] { range1, rangeRest };
+                return new Range[] { range1, rangeRest };
             }
+
         };
 
         public abstract boolean apply(int a, int b);
 
-        public abstract PartRange[] split(PartRange ruleRange, String prop, int value);
+        protected abstract Range[] split(Range r, int value);
+
+        public final PartRange[] split(PartRange ruleRange, String prop, int value) {
+
+            final var myRange = ruleRange.ranges.get(prop);
+
+            final var myRanges = split(myRange, value);
+
+            PartRange range1 = null;
+            PartRange rangeRest = null;
+
+            if (myRanges[0] != null) {
+                range1 = new PartRange(new HashMap<>(ruleRange.ranges));
+                range1.ranges.put(prop, myRanges[0]);
+            }
+
+            if (myRanges[1] != null) {
+                rangeRest = new PartRange(new HashMap<>(ruleRange.ranges));
+                rangeRest.ranges.put(prop, myRanges[1]);
+            }
+
+            return new PartRange[] { range1, rangeRest };
+        }
 
         @Override
         public String toString() {

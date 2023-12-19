@@ -7,9 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.typemeta.funcj.tuples.Tuple2;
 
 import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
@@ -156,21 +153,13 @@ public class App {
 
         public PartRange[] split(PartRange ruleRange);
 
-        public default long combinations(PartRange ruleRange, Map<String, Workflow> workflows,
-                Map<Tuple2<String, PartRange>, Long> cache) {
+        public default long combinations(PartRange ruleRange, Map<String, Workflow> workflows) {
             if (dest().equals("R")) {
                 return 0l;
             } else if (dest().equals("A")) {
                 return ruleRange.ranges.values().stream().mapToLong(Range::size).reduce(1l, (a, b) -> a * b);
             } else {
-                var k = Tuple2.of(dest(), ruleRange);
-                if (cache.containsKey(k)) {
-                    return cache.get(k);
-                } else {
-                    var result = workflows.get(dest()).combinations(ruleRange, workflows, cache);
-                    cache.put(k, result);
-                    return result;
-                }
+                return workflows.get(dest()).combinations(ruleRange, workflows);
             }
         }
 
@@ -272,8 +261,7 @@ public class App {
             return String.format("{%s}", rules.stream().map(Rule::toString).reduce((a, b) -> a + "," + b).orElse(""));
         }
 
-        public long combinations(PartRange initialRange, Map<String, Workflow> workflows,
-                Map<Tuple2<String, PartRange>, Long> cache) {
+        public long combinations(PartRange initialRange, Map<String, Workflow> workflows) {
 
             long sum = 0;
             var ruleRange = initialRange;
@@ -284,7 +272,7 @@ public class App {
                 var newRanges = rule.split(ruleRange);
                 ruleRange = newRanges[0];
                 if (ruleRange != null) {
-                    sum += rule.combinations(ruleRange, workflows, cache);
+                    sum += rule.combinations(ruleRange, workflows);
                 }
                 ruleRange = newRanges[1];
             }
@@ -402,9 +390,7 @@ public class App {
         var initialRange = new PartRange(Map.of("x", Range.of(1, 4000), "m", Range.of(1, 4000), "a", Range.of(1, 4000),
                 "s", Range.of(1, 4000)));
 
-        Map<Tuple2<String, PartRange>, Long> cache = new ConcurrentHashMap<>();
-
-        return workflows.get("in").combinations(initialRange, workflows, cache);
+        return workflows.get("in").combinations(initialRange, workflows);
 
     }
 

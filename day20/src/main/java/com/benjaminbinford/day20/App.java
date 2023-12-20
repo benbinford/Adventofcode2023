@@ -259,19 +259,18 @@ public class App {
         final var input = IO.getResource("com/benjaminbinford/day20/input.txt");
 
         long startTime = System.nanoTime();
-        // final var app = new App(input);
+        final var app = new App(input);
 
-        // IO.answer(app.pushButton1000Times());
+        IO.answer(app.pushButton1000Times());
 
         var app2 = new App(input);
 
-        // System.out.println("button -> broadcaster");
-        // for (var m : app2.modules.values()) {
-        // for (var o : m.getOutputs()) {
-        // System.out.println(String.format("%s -> %s", m.getId(), o));
-        // }
-        // }
-        // IO.answer(app2.pushButtonUntilRxLow());
+        IO.answer("button -> broadcaster");
+        for (var m : app2.modules.values()) {
+            for (var o : m.getOutputs()) {
+                IO.answer(String.format("%s -> %s", m.getId(), o));
+            }
+        }
 
         IO.answer(new App(input).pushButtonUntilMessage("hk", new Message("pm", "dt", Pulse.HIGH)));
         IO.answer(new App(input).pushButtonUntilMessage("jr", new Message("dl", "dt", Pulse.HIGH)));

@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 
 public class Dijkstra<V, E extends Weight<E>> {
@@ -36,6 +37,13 @@ public class Dijkstra<V, E extends Weight<E>> {
         var a = findMinNode(goal);
 
         return a.getG();
+    }
+
+    public List<V> findMatchingNodes(BiPredicate<V, E> goal) {
+        return arena.entrySet().stream()
+                .filter(e -> goal.test(e.getKey(), e.getValue().getG()))
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     private Node<V, E> findMinNode(Predicate<V> goal) {

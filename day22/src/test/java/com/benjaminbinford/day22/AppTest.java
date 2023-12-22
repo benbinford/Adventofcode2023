@@ -112,8 +112,10 @@ class AppTest {
         assertEquals(0, c.chainReaction());
         assertEquals(0, d.chainReaction());
         assertEquals(0, e.chainReaction());
-        assertEquals(0, f.chainReaction());
-        assertEquals(1, g.chainReaction());
+        assertEquals(1, f.chainReaction());
+        assertEquals(0, g.chainReaction());
+
+        assertEquals(7, app.chainReaction());
     }
 
 }

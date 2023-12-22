@@ -123,8 +123,22 @@ public class App {
             return String.format("%s~%s    <- %s", p1, p2, id);
         }
 
+        private void chainReaction(Set<Brick> destroyed) {
+
+            var nextLayer = supports.stream().filter(b -> destroyed.containsAll(b.getSupportedBy())).toList();
+
+            destroyed.addAll(nextLayer);
+            for (var nextb : nextLayer) {
+                nextb.chainReaction(destroyed);
+            }
+
+        }
+
         public int chainReaction() {
-            return 0;
+            Set<Brick> destroyed = new HashSet<>();
+            destroyed.add(this);
+            chainReaction(destroyed);
+            return destroyed.size() - 1;
         }
     }
 
@@ -194,7 +208,12 @@ public class App {
         final var app = new App(input);
         // 598 is too high
         IO.answer(app.disintegrationCount());
+        IO.answer(app.chainReaction());
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));
+    }
+
+    public int chainReaction() {
+        return bricks.stream().mapToInt(Brick::chainReaction).sum();
     }
 }

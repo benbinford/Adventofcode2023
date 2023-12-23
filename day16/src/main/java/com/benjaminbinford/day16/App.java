@@ -1,7 +1,7 @@
 package com.benjaminbinford.day16;
 
-import java.util.Arrays;
-import java.util.stream.IntStream;
+import java.util.Optional;
+import java.util.SortedSet;
 
 import com.benjaminbinford.utils.IO;
 
@@ -11,11 +11,7 @@ import com.benjaminbinford.utils.IO;
  */
 public class App {
 
-    // indexed by (y*height + x)*4 + dir
-    // -1 is empty
-    int[] nextCell;
-    int[] nextCell2;
-
+    char[][] grid;
     int height;
     int width;
 
@@ -24,96 +20,10 @@ public class App {
     static final char SLASH = '/';
     static final char BACKSLASH = '\\';
 
-    int cellIndex(int y, int x, Dir dir) {
-        if (x < 0 || x >= width || y < 0 || y >= height)
-            return -1;
-        return (y * width + x) * 4 + dir.ordinal();
-    }
-
-    String cellIndexDescription(int cellid) {
-        int dir = cellid % 4;
-        cellid /= 4;
-        int x = cellid % width;
-        cellid /= width;
-        int y = cellid;
-        return String.format("(%d, %d, %s)", x, y, Dir.values()[dir]);
-    }
-
-    int getNextCell(int y, int x, Dir dir) {
-        return nextCell[cellIndex(y, x, dir)];
-    }
-
-    int getNextCell2(int y, int x, Dir dir) {
-        return nextCell2[cellIndex(y, x, dir)];
-    }
-
     public App(String input) {
-        var grid = input.lines().map(String::toCharArray).toArray(char[][]::new);
+        grid = input.lines().map(String::toCharArray).toArray(char[][]::new);
         height = grid.length;
         width = grid[0].length;
-
-        nextCell = new int[height * width * 4];
-        nextCell2 = new int[height * width * 4];
-        for (int j = 0; j < height; j++) {
-            for (int i = 0; i < height; i++) {
-                switch (grid[j][i]) {
-                    case VERTICAL:
-                        nextCell[cellIndex(j, i, Dir.LEFT)] = cellIndex(j - 1, i, Dir.UP);
-                        nextCell2[cellIndex(j, i, Dir.LEFT)] = cellIndex(j + 1, i, Dir.DOWN);
-                        nextCell[cellIndex(j, i, Dir.RIGHT)] = cellIndex(j - 1, i, Dir.UP);
-                        nextCell2[cellIndex(j, i, Dir.RIGHT)] = cellIndex(j + 1, i, Dir.DOWN);
-                        nextCell[cellIndex(j, i, Dir.UP)] = cellIndex(j - 1, i, Dir.UP);
-                        nextCell2[cellIndex(j, i, Dir.UP)] = -1;
-                        nextCell[cellIndex(j, i, Dir.DOWN)] = cellIndex(j + 1, i, Dir.DOWN);
-                        nextCell2[cellIndex(j, i, Dir.DOWN)] = -1;
-                        break;
-                    case HORIZONTAL:
-                        nextCell[cellIndex(j, i, Dir.LEFT)] = cellIndex(j, i - 1, Dir.LEFT);
-                        nextCell2[cellIndex(j, i, Dir.LEFT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.RIGHT)] = cellIndex(j, i + 1, Dir.RIGHT);
-                        nextCell2[cellIndex(j, i, Dir.RIGHT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.UP)] = cellIndex(j, i - 1, Dir.LEFT);
-                        nextCell2[cellIndex(j, i, Dir.UP)] = cellIndex(j, i + 1, Dir.RIGHT);
-                        nextCell[cellIndex(j, i, Dir.DOWN)] = cellIndex(j, i - 1, Dir.LEFT);
-                        nextCell2[cellIndex(j, i, Dir.DOWN)] = cellIndex(j, i + 1, Dir.RIGHT);
-
-                        break;
-
-                    case SLASH:
-                        nextCell[cellIndex(j, i, Dir.LEFT)] = cellIndex(j + 1, i, Dir.DOWN);
-                        nextCell2[cellIndex(j, i, Dir.LEFT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.RIGHT)] = cellIndex(j - 1, i, Dir.UP);
-                        nextCell2[cellIndex(j, i, Dir.RIGHT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.UP)] = cellIndex(j, i + 1, Dir.RIGHT);
-                        nextCell2[cellIndex(j, i, Dir.UP)] = -1;
-                        nextCell[cellIndex(j, i, Dir.DOWN)] = cellIndex(j, i - 1, Dir.LEFT);
-                        nextCell2[cellIndex(j, i, Dir.DOWN)] = -1;
-
-                        break;
-                    case BACKSLASH:
-                        nextCell[cellIndex(j, i, Dir.LEFT)] = cellIndex(j - 1, i, Dir.UP);
-                        nextCell2[cellIndex(j, i, Dir.LEFT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.RIGHT)] = cellIndex(j + 1, i, Dir.DOWN);
-                        nextCell2[cellIndex(j, i, Dir.RIGHT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.UP)] = cellIndex(j, i - 1, Dir.LEFT);
-                        nextCell2[cellIndex(j, i, Dir.UP)] = -1;
-                        nextCell[cellIndex(j, i, Dir.DOWN)] = cellIndex(j, i + 1, Dir.RIGHT);
-                        nextCell2[cellIndex(j, i, Dir.DOWN)] = -1;
-
-                        break;
-                    default:
-                        nextCell[cellIndex(j, i, Dir.LEFT)] = cellIndex(j, i - 1, Dir.LEFT);
-                        nextCell2[cellIndex(j, i, Dir.LEFT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.RIGHT)] = cellIndex(j, i + 1, Dir.RIGHT);
-                        nextCell2[cellIndex(j, i, Dir.RIGHT)] = -1;
-                        nextCell[cellIndex(j, i, Dir.UP)] = cellIndex(j - 1, i, Dir.UP);
-                        nextCell2[cellIndex(j, i, Dir.UP)] = -1;
-                        nextCell[cellIndex(j, i, Dir.DOWN)] = cellIndex(j + 1, i, Dir.DOWN);
-                        nextCell2[cellIndex(j, i, Dir.DOWN)] = -1;
-                }
-
-            }
-        }
 
     }
 
@@ -123,33 +33,103 @@ public class App {
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        int energy = app.energize();
+        IO.answer(app.energize());
 
-        int maxEnergy = app.energizeMaximum();
-
+        IO.answer(app.energizeMaximum());
         long elapsedTime = System.nanoTime() - startTime;
-        IO.answer(energy);
-        IO.answer(maxEnergy);
-        IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));
+        IO.answer(String.format("Elapsed time: %d", elapsedTime / 100_000));
     }
 
     enum Dir {
-        UP, DOWN, LEFT, RIGHT
+        UP, DOWN, LEFT, RIGHT, SENTINEL
+    }
+
+    private static final String CANNOT_ADVANCE_SENTINEL_TILE = "Cannot advance sentinel tile";
+
+    class Tile implements Comparable<Tile> {
+        int x;
+        int y;
+        Dir dir;
+
+        Tile(int x, int y, Dir dir) {
+            this.x = x;
+            this.y = y;
+            this.dir = dir;
+        }
+
+        @Override
+        public int compareTo(Tile o) {
+            int result = Integer.compare(x, o.x);
+            if (result == 0) {
+                result = Integer.compare(y, o.y);
+                if (result == 0) {
+                    result = dir.compareTo(o.dir);
+                }
+            }
+            return result;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (obj == null || getClass() != obj.getClass()) {
+                return false;
+            }
+            Tile other = (Tile) obj;
+            return x == other.x && y == other.y && dir == other.dir;
+        }
+
+        @Override
+        public int hashCode() {
+            return java.util.Objects.hash(x, y, dir);
+        }
+
+        Optional<Tile> advance() {
+            return advance(dir);
+        }
+
+        Optional<Tile> advance(Dir dir) {
+            switch (dir) {
+                case UP:
+                    if (y == 0)
+                        return Optional.empty();
+                    else
+                        return Optional.of(new Tile(x, y - 1, dir));
+                case DOWN:
+                    if (y == height - 1)
+                        return Optional.empty();
+                    else
+                        return Optional.of(new Tile(x, y + 1, dir));
+                case LEFT:
+                    if (x == 0)
+                        return Optional.empty();
+                    else
+                        return Optional.of(new Tile(x - 1, y, dir));
+                case RIGHT:
+                    if (x == width - 1)
+                        return Optional.empty();
+                    else
+                        return Optional.of(new Tile(x + 1, y, dir));
+                default:
+                    throw new UnsupportedOperationException(CANNOT_ADVANCE_SENTINEL_TILE);
+            }
+
+        }
     }
 
     class Energizer {
-        boolean[] seenSquares = new boolean[nextCell.length / 4];
-        boolean[] seenTiles = new boolean[nextCell.length];
-
+        SortedSet<Tile> visitedTiles = new java.util.TreeSet<>();
         int energized = 0;
 
-        public boolean everVisited(int cellId) {
-            return seenSquares[cellId / 4];
-        }
-
-        void reset() {
-            Arrays.fill(seenSquares, false);
-            Arrays.fill(seenTiles, false);
+        public boolean everVisited(Tile t) {
+            var set = visitedTiles.headSet(new Tile(t.x, t.y, Dir.SENTINEL));
+            if (set.isEmpty()) {
+                return false;
+            }
+            var t2 = set.last();
+            return t2.x == t.x && t2.y == t.y;
         }
 
         @Override
@@ -157,68 +137,101 @@ public class App {
             StringBuilder b = new StringBuilder();
             for (int j = 0; j < height; j++) {
                 for (int i = 0; i < width; i++)
-                    b.append(everVisited(cellIndex(j, i, Dir.UP)) ? '#' : '.');
+                    b.append(everVisited(new Tile(i, j, Dir.SENTINEL)) ? '#' : grid[j][i]);
                 b.append('\n');
             }
             return b.toString();
         }
 
-        public void energize(int cellId) {
+        public int energize(Tile t) {
 
-            if (cellId < 0) {
-                return;
-            }
-            if (seenTiles[cellId]) {
-                return;
+            if (visitedTiles.contains(t)) {
+                return energized;
             }
 
-            // IO.answer("Visiting " + cellIndexDescription(cellId) + "\n");
-
-            seenTiles[cellId] = true;
-            var squareId = cellId / 4;
-            if (!seenSquares[squareId]) {
+            if (!everVisited(t)) {
                 energized++;
-                seenSquares[squareId] = true;
             }
 
-            energize(nextCell[cellId]);
-            energize(nextCell2[cellId]);
-        }
+            visitedTiles.add(t);
 
-        public int getEnergy() {
+            switch (grid[t.y][t.x]) {
+                case VERTICAL:
+                    if (t.dir == Dir.LEFT || t.dir == Dir.RIGHT) {
+                        t.advance(Dir.UP).ifPresent(this::energize);
+                        t.advance(Dir.DOWN).ifPresent(this::energize);
+
+                    } else {
+                        t.advance().ifPresent(this::energize);
+                    }
+                    break;
+                case HORIZONTAL:
+                    if (t.dir == Dir.UP || t.dir == Dir.DOWN) {
+                        t.advance(Dir.LEFT).ifPresent(this::energize);
+                        t.advance(Dir.RIGHT).ifPresent(this::energize);
+                    } else {
+                        t.advance().ifPresent(this::energize);
+                    }
+                    break;
+                case SLASH:
+                    switch (t.dir) {
+                        case UP:
+                            t.advance(Dir.RIGHT).ifPresent(this::energize);
+                            break;
+                        case DOWN:
+                            t.advance(Dir.LEFT).ifPresent(this::energize);
+                            break;
+                        case LEFT:
+                            t.advance(Dir.DOWN).ifPresent(this::energize);
+                            break;
+                        case RIGHT:
+                            t.advance(Dir.UP).ifPresent(this::energize);
+                            break;
+                        case SENTINEL:
+                            throw new UnsupportedOperationException(CANNOT_ADVANCE_SENTINEL_TILE);
+                    }
+                    break;
+                case BACKSLASH:
+                    switch (t.dir) {
+                        case UP:
+                            t.advance(Dir.LEFT).ifPresent(this::energize);
+                            break;
+                        case DOWN:
+                            t.advance(Dir.RIGHT).ifPresent(this::energize);
+                            break;
+                        case LEFT:
+                            t.advance(Dir.UP).ifPresent(this::energize);
+                            break;
+                        case RIGHT:
+                            t.advance(Dir.DOWN).ifPresent(this::energize);
+                            break;
+                        case SENTINEL:
+                            throw new UnsupportedOperationException(CANNOT_ADVANCE_SENTINEL_TILE);
+                    }
+                    break;
+                default:
+                    t.advance().ifPresent(this::energize);
+            }
+
             return energized;
         }
+
     }
 
     public int energize() {
-        var e = new Energizer();
-        e.energize(cellIndex(0, 0, Dir.RIGHT));
-        return e.getEnergy();
+        return new Energizer().energize(new Tile(0, 0, Dir.RIGHT));
     }
 
     public int energizeMaximum() {
         int max = 0;
-        max = IntStream.range(0, height).parallel().map(j -> {
-            var e = new Energizer();
-            e.energize(cellIndex(j, 0, Dir.RIGHT));
-            var max2 = e.getEnergy();
-            e.reset();
-            e.energize(cellIndex(j, width - 1, Dir.LEFT));
-            max2 = Math.max(max2, e.getEnergy());
-            e.reset();
-            return max2;
-        }).max().getAsInt();
-
-        var max3 = IntStream.range(0, width).parallel().map(i -> {
-            var e = new Energizer();
-            e.energize(cellIndex(0, i, Dir.DOWN));
-            var max4 = e.getEnergy();
-            e.reset();
-            e.energize(cellIndex(height - 1, i, Dir.UP));
-            max4 = Math.max(max4, e.getEnergy());
-            e.reset();
-            return max4;
-        }).max().getAsInt();
-        return Math.max(max, max3);
+        for (var j = 0; j < height; j++) {
+            max = Math.max(max, new Energizer().energize(new Tile(0, j, Dir.RIGHT)));
+            max = Math.max(max, new Energizer().energize(new Tile(width - 1, j, Dir.LEFT)));
+        }
+        for (var i = 0; i < width; i++) {
+            max = Math.max(max, new Energizer().energize(new Tile(i, 0, Dir.DOWN)));
+            max = Math.max(max, new Energizer().energize(new Tile(i, height - 1, Dir.UP)));
+        }
+        return max;
     }
 }

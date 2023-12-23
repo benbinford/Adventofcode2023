@@ -21,10 +21,7 @@ class AppTest {
 
         final var app = new App(input);
 
-        Energizer energizer = app.new Energizer();
-        energizer.energize(app.cellIndex(0, 0, Dir.RIGHT));
-        IO.answer(energizer);
-        assertEquals(46, energizer.getEnergy());
+        assertEquals(46, app.energize());
     }
 
     @Test

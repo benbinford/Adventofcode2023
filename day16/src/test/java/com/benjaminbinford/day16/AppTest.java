@@ -1,11 +1,9 @@
 package com.benjaminbinford.day16;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
 
-import com.benjaminbinford.day16.App.Dir;
-import com.benjaminbinford.day16.App.Energizer;
 import com.benjaminbinford.utils.IO;
 
 /**

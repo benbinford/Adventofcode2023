@@ -1,6 +1,5 @@
 package com.benjaminbinford.day21;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -55,13 +54,7 @@ public class App {
         long startTime = System.nanoTime();
         final var app = new App(input, 64);
 
-        // IO.answer(String.format("%d", app.availablePlots()));
-
         IO.answer(String.format("%d", app.availablePlotsInfinite()));
-
-        // final var app2 = new App(input, 26501365);
-
-        // IO.answer(String.format("%d", app2.availablePlotsInfinite()));
 
         var side = app.plots.length;
         var half = app.start.x;
@@ -102,16 +95,6 @@ public class App {
 
         d.addVertex(start, new IntWeight(0));
         d.calculate();
-
-        // for (var i = start.steps(); i >= 0; i--) {
-        // final var step = i;
-        // var ps = d.findMatchingNodes((v, g) -> v.steps() == step);
-
-        // IO.answer(
-        // String.format("%d%n%n%s%n%n%n", start.steps() - i, visualize(-10, 20, -10,
-        // 20, this.plots, ps, i)));
-
-        // }
 
         var ps = d.findMatchingNodes((v, g) -> v.steps() == 0);
 
@@ -154,10 +137,7 @@ public class App {
 
             currentStep = tmp;
             currentStep.clear();
-            // if (step % 1_000 == 0) {
-            // IO.answer(step);
-            // IO.answer(lastStep.size());
-            // }
+
         }
 
         return reachablePlots;
@@ -214,23 +194,6 @@ public class App {
             }
         }
 
-    }
-
-    private static String visualize(int beginJ, int endJ, int beginI, int endI, char[][] plots, Collection<Point> ps) {
-        var height = plots.length;
-        var width = plots[0].length;
-        var sb = new StringBuilder();
-        for (int j = beginJ; j <= endJ; j++) {
-            for (int i = beginI; i <= endI; i++) {
-                if (ps.contains(new Point(i, j))) {
-                    sb.append('O');
-                } else {
-                    sb.append(plots[computeModulus(j, height)][computeModulus(i, width)]);
-                }
-            }
-            sb.append('\n');
-        }
-        return sb.toString();
     }
 
     private static String visualize(int beginJ, int endJ, int beginI, int endI, char[][] plots, List<PointStep> ps,

@@ -85,8 +85,6 @@ public class App {
 
         dijkstra.addVertex(new Cell(1, 0, Dir.S), IntWeight.of(0));
 
-        // dijkstra.setVisualizer(path -> IO.answer("\n\n" + visualize(path)));
-
         dijkstra.calculate();
 
         IO.answer("\n\n" + visualize(dijkstra.getPath(goal)));

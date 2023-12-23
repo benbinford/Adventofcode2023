@@ -76,6 +76,7 @@ public class Dijkstra<V, E extends Weight<E>> {
 
                 if (existing.getG().compareTo(n.getG()) > 0) {
                     existing.setG(n.getG());
+                    existing.parent = u;
                     q.remove(existing);
                     q.add(existing);
                 } else if (n == existing) {

@@ -21,4 +21,13 @@ class AppTest {
 
         assertEquals(94, app.longestHike());
     }
+
+    @Test
+    void shouldAnswerWithTrue2() {
+        final var input = IO.getResource("com/benjaminbinford/day23/testinput.txt");
+
+        final var app = new App(input);
+
+        assertEquals(154, app.longestHikeNoIce());
+    }
 }

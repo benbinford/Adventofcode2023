@@ -10,4 +10,8 @@ public record IntWeight(int weight) implements Weight<IntWeight> {
     public IntWeight combineEdge(IntWeight weight) {
         return new IntWeight(weight.weight + this.weight);
     }
+
+    public static IntWeight of(int weight) {
+        return new IntWeight(weight);
+    }
 }

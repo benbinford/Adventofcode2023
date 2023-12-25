@@ -93,14 +93,20 @@ public class App {
 
             buildVertices();
 
-            // for (var c : vertices) {
-            // for (var e : getChildren(c)) {
-            // System.out.printf("%s.%s -> %s.%s [label=%s]\n", c.x, c.y, e.get1().x,
-            // e.get1().y,
-            // e.get2().weight());
-            // }
-            // }
+            visualizeToGraphviz();
 
+        }
+
+        public StringBuilder visualizeToGraphviz() {
+            var sb = new StringBuilder();
+            for (var c : vertices) {
+                for (var e : getChildren(c)) {
+                    sb.append(String.format("%s.%s -> %s.%s [label=%s]%n", c.x, c.y, e.get1().x,
+                            e.get1().y,
+                            e.get2().weight()));
+                }
+            }
+            return sb;
         }
 
         public boolean isVertex(Cell cell) {

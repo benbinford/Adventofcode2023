@@ -70,6 +70,10 @@ public class Dijkstra<V, E extends Weight<E>> {
 
             neighbors.addNeighbors(u.vertex, (V v, E weight) -> {
 
+                // no backtracking
+                if (u.parent != null && v == u.parent.vertex) {
+                    return;
+                }
                 Node<V, E> n = new Node<>(v, u.gScore.combineEdge(weight), nodeIds++);
                 n.parent = u;
                 Node<V, E> existing = arena.computeIfAbsent(n.vertex, k -> n);

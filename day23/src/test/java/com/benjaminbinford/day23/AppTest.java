@@ -27,7 +27,7 @@ class AppTest {
         final var input = IO.getResource("com/benjaminbinford/day23/testinput.txt");
 
         final var app = new App(input);
-
+        app.buildGraph(app::addNeighborsNoIce);
         assertEquals(154, app.longestHikeNoIce());
     }
 }

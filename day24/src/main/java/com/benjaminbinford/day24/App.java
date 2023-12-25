@@ -1,6 +1,9 @@
 package com.benjaminbinford.day24;
 
 import java.util.List;
+import java.util.Optional;
+
+import org.typemeta.funcj.tuples.Tuple2;
 
 import com.benjaminbinford.utils.IO;
 
@@ -14,44 +17,44 @@ public class App {
         A, B, BOTH
     }
 
-    sealed interface PathResult permits PathResult.PathInside, PathResult.PathOutside, PathResult.PathNonIntersecting,
-            PathResult.PathEarlier {
-
-        record PathInside(Vector3 intersection) implements PathResult {
-
-            @Override
-            public String toString() {
-                return String.format("PathInside(%s)", intersection);
-            }
-
-        }
-
-        record PathOutside(Vector3 intersection) implements PathResult {
-            @Override
-            public String toString() {
-                return String.format("PathOutside(%s)", intersection);
-            }
-        }
-
-        record PathNonIntersecting() implements PathResult {
-            @Override
-            public String toString() {
-                return "PathNonIntersecting";
-            }
-        }
-
-        record PathEarlier(EarlierCrossing crossing) implements PathResult {
-            @Override
-            public String toString() {
-                return String.format("PathEarlier(%s)", crossing);
-            }
-        }
+    sealed interface PathResult permits PathInside, PathOutside, PathNonIntersecting,
+            PathEarlier {
 
         default boolean isInside() {
             return this instanceof PathInside;
 
         }
 
+    }
+
+    record PathInside(Vector3 intersection, double t, double s) implements PathResult {
+
+        @Override
+        public String toString() {
+            return String.format("PathInside(%s)", intersection);
+        }
+
+    }
+
+    record PathOutside(Vector3 intersection, double t, double s) implements PathResult {
+        @Override
+        public String toString() {
+            return String.format("PathOutside(%s)", intersection);
+        }
+    }
+
+    record PathNonIntersecting() implements PathResult {
+        @Override
+        public String toString() {
+            return "PathNonIntersecting";
+        }
+    }
+
+    record PathEarlier(EarlierCrossing crossing) implements PathResult {
+        @Override
+        public String toString() {
+            return String.format("PathEarlier(%s)", crossing);
+        }
     }
 
     private static final double EPSILON = 1e-9;
@@ -126,7 +129,7 @@ public class App {
                             Double.parseDouble(vparts[2])));
         }
 
-        PathResult intersects2d(Hailstone b, Vector3 startRange, Vector3 endRange) {
+        PathResult pathIntersects2d(Hailstone b, Vector3 startRange, Vector3 endRange) {
 
             /*
              * Parametric for t
@@ -160,7 +163,7 @@ public class App {
             var bSlope = b.velocity.y / b.velocity.x;
 
             if (epsEquals(aSlope, bSlope)) {
-                return new PathResult.PathNonIntersecting();
+                return new PathNonIntersecting();
             }
 
             var x = (aSlope * a.position.x - bSlope * b.position.x + b.position.y - a.position.y)
@@ -170,32 +173,102 @@ public class App {
             var s = (x - b.position.x) / b.velocity.x;
 
             if (t < 0 && s < 0) {
-                return new PathResult.PathEarlier(EarlierCrossing.BOTH);
+                return new PathEarlier(EarlierCrossing.BOTH);
             } else if (t < 0) {
-                return new PathResult.PathEarlier(EarlierCrossing.A);
+                return new PathEarlier(EarlierCrossing.A);
             } else if (s < 0) {
-                return new PathResult.PathEarlier(EarlierCrossing.B);
+                return new PathEarlier(EarlierCrossing.B);
             } else if (x >= startRange.x && x <= endRange.x && y >= startRange.y && y <= endRange.y) {
-                return new PathResult.PathInside(new Vector3(x, y, 0));
+                return new PathInside(new Vector3(x, y, 0), t, s);
             } else {
-                return new PathResult.PathOutside(new Vector3(x, y, 0));
+                return new PathOutside(new Vector3(x, y, 0), t, s);
+            }
+        }
+
+        PathResult pathIntersects3d(Hailstone b, Vector3 startRange, Vector3 endRange) {
+
+            // check for z intersection
+            // a0z + avz*t = az
+            // b0z + bvz*s = bz
+
+            var a = this;
+
+            var result = pathIntersects2d(b, startRange, endRange);
+            switch (result) {
+                case PathInside(Vector3 p, double t, double s): {
+                    var az = a.position.z + a.velocity.z * t;
+                    var bz = b.position.z + b.velocity.z * s;
+                    if (epsEquals(az, bz)) {
+                        if (az >= startRange.z && az <= endRange.z) {
+                            return new PathInside(new Vector3(p.x, p.y, az), t, s);
+                        } else {
+                            return new PathOutside(new Vector3(p.x, p.y, az), t, s);
+                        }
+                    } else {
+                        return new PathNonIntersecting();
+                    }
+                }
+                case PathOutside(Vector3 p, double t, double s): {
+                    var az = a.position.z + a.velocity.z * t;
+                    var bz = b.position.z + b.velocity.z * s;
+                    if (epsEquals(az, bz)) {
+                        return new PathOutside(new Vector3(p.x, p.y, az), t, s);
+                    } else {
+                        return new PathNonIntersecting();
+                    }
+                }
+                case PathNonIntersecting():
+                    return new PathNonIntersecting();
+                case PathEarlier(EarlierCrossing crossing):
+                    return new PathEarlier(crossing);
+
+            }
+
+        }
+
+        Optional<Tuple2<Vector3, Double>> intersects(Hailstone b, Vector3 startRange, Vector3 endRange) {
+
+            var result = pathIntersects3d(b, startRange, endRange);
+            switch (result) {
+                case PathInside(Vector3 p, double t, double s): {
+                    if (epsEquals(t, s)) {
+                        return Optional.of(Tuple2.of(p, t));
+                    } else {
+                        return Optional.empty();
+                    }
+
+                }
+                case PathOutside(Vector3 p, double t, double s): {
+                    if (epsEquals(t, s)) {
+                        return Optional.of(Tuple2.of(p, t));
+                    } else {
+                        return Optional.empty();
+                    }
+                }
+                case PathNonIntersecting():
+                    return Optional.empty();
+                case PathEarlier(EarlierCrossing crossing):
+                    return Optional.empty();
+
             }
         }
 
     }
 
     List<Hailstone> hailstones2d;
+    List<Hailstone> hailstones3d;
 
     public App(String input) {
         hailstones2d = input.lines().map(Hailstone::of2D).toList();
+        hailstones3d = input.lines().map(Hailstone::of3D).toList();
     }
 
-    public long countInsideIntersections2D(Vector3 startRange, Vector3 endRange) {
+    public long countInsideIntersections(Vector3 startRange, Vector3 endRange) {
 
         var sum = 0l;
         for (var i = 0; i < hailstones2d.size() - 1; i++) {
             for (var j = i + 1; j < hailstones2d.size(); j++) {
-                if (hailstones2d.get(i).intersects2d(hailstones2d.get(j), startRange, endRange).isInside()) {
+                if (hailstones2d.get(i).pathIntersects3d(hailstones2d.get(j), startRange, endRange).isInside()) {
                     sum++;
                 }
             }
@@ -209,7 +282,7 @@ public class App {
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        IO.answer(String.format("Part 1: %d", app.countInsideIntersections2D(new Vector3(200000000000000.0,
+        IO.answer(String.format("Part 1: %d", app.countInsideIntersections(new Vector3(200000000000000.0,
                 200000000000000.0, 0), new Vector3(400000000000000.0, 400000000000000.0, 0))));
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-                            
+                              
+  
   
   
   
@@ -14,7 +15,8 @@
   
   
   <modelVersion>4.0.0</modelVersion>
-                            
+                              
+  
   
   
   
@@ -28,7 +30,8 @@
   
   
   <groupId>com.benjaminbinford.aoc2023</groupId>
-                            
+                              
+  
   
   
   
@@ -42,7 +45,8 @@
   
   
   <artifactId>aoc2023</artifactId>
-                            
+                              
+  
   
   
   
@@ -56,7 +60,8 @@
   
   
   <version>1.0.0</version>
-                            
+                              
+  
   
   
   
@@ -70,7 +75,8 @@
   
   
   <packaging>pom</packaging>
-                            
+                              
+  
   
   
   
@@ -84,7 +90,8 @@
   
   
   <modules>
-                                                        
+                                                            
+    
     
     
     
@@ -98,7 +105,8 @@
     
     
     <module>utils</module>
-                                                        
+                                                            
+    
     
     
     
@@ -112,7 +120,8 @@
     
     
     <module>dayArchetype</module>
-                                                        
+                                                            
+    
     
     
     
@@ -126,7 +135,8 @@
     
     
     <module>day1</module>
-                                                        
+                                                            
+    
     
     
     
@@ -140,7 +150,8 @@
     
     
     <module>day2</module>
-                                                        
+                                                            
+    
     
     
     
@@ -154,7 +165,8 @@
     
     
     <module>day3</module>
-                                                        
+                                                            
+    
     
     
     
@@ -168,7 +180,8 @@
     
     
     <module>day4</module>
-                                                        
+                                                            
+    
     
     
     
@@ -182,7 +195,8 @@
     
     
     <module>day5</module>
-                                                        
+                                                            
+    
     
     
     
@@ -196,7 +210,8 @@
     
     
     <module>day6</module>
-                                                        
+                                                            
+    
     
     
     
@@ -210,7 +225,8 @@
     
     
     <module>day7</module>
-                                                        
+                                                            
+    
     
     
     
@@ -224,7 +240,8 @@
     
     
     <module>day8</module>
-                                                        
+                                                            
+    
     
     
     
@@ -238,7 +255,8 @@
     
     
     <module>day9</module>
-                                                        
+                                                            
+    
     
     
     
@@ -252,7 +270,8 @@
     
     
     <module>day10</module>
-                                                        
+                                                            
+    
     
     
     
@@ -266,7 +285,8 @@
     
     
     <module>day11</module>
-                                                      
+                                                          
+    
     
     
     
@@ -280,7 +300,8 @@
     
     
     <module>day12</module>
-                                                  
+                                                      
+    
     
     
     
@@ -293,7 +314,8 @@
     
     
     <module>day13</module>
-                                              
+                                                  
+    
     
     
     
@@ -305,7 +327,8 @@
     
     
     <module>day14</module>
-                                          
+                                              
+    
     
     
     
@@ -316,7 +339,8 @@
     
     
     <module>day15</module>
-                                      
+                                          
+    
     
     
     
@@ -326,7 +350,8 @@
     
     
     <module>day16</module>
-                                  
+                                      
+    
     
     
     
@@ -335,7 +360,8 @@
     
     
     <module>day17</module>
-                              
+                                  
+    
     
     
     
@@ -343,34 +369,43 @@
     
     
     <module>day18</module>
-                          
+                              
+    
     
     
     
     
     
     <module>day19</module>
-                      
+                          
+    
     
     
     
     
     <module>day20</module>
-                  
+                      
+    
     
     
     
     <module>day21</module>
-              
+                  
+    
     
     
     <module>day22</module>
-          
+              
+    
     
     <module>day23</module>
+          
+    
+    <module>day24</module>
       
   </modules>
-                            
+                              
+  
   
   
   
@@ -384,7 +419,8 @@
   
   
   <properties>
-                                                        
+                                                            
+    
     
     
     
@@ -398,7 +434,8 @@
     
     
     <maven.compiler.source>21</maven.compiler.source>
-                                                        
+                                                            
+    
     
     
     
@@ -412,7 +449,8 @@
     
     
     <maven.compiler.target>21</maven.compiler.target>
-                                                      
+                                                          
+  
   
   
   
@@ -426,7 +464,8 @@
   
   
   </properties>
-                            
+                              
+  
   
   
   
@@ -440,7 +479,8 @@
   
   
   <build>
-                                                        
+                                                            
+    
     
     
     
@@ -454,7 +494,8 @@
     
     
     <plugins>
-                                                                                    
+                                                                                          
+      
       
       
       
@@ -468,7 +509,8 @@
       
       
       <!-- Add necessary build plugins here -->
-                                                                                  
+                                                                                        
+    
     
     
     
@@ -482,7 +524,8 @@
     
     
     </plugins>
-                                                      
+                                                          
+  
   
   
   
@@ -496,7 +539,8 @@
   
   
   </build>
-                            
+                              
+  
   
   
   
@@ -510,7 +554,8 @@
   
   
   <dependencies>
-                                                        
+                                                            
+    
     
     
     
@@ -524,7 +569,8 @@
     
     
     <!-- Add common dependencies here -->
-                                                      
+                                                          
+  
   
   
   
@@ -538,7 +584,8 @@
   
   
   </dependencies>
-                          
+                            
+
 
 
 

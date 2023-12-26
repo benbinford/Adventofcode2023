@@ -63,6 +63,16 @@ public class App {
 
     record HailstoneConstraint(double b0, double bv, Constraint a0Left, Constraint a0Right) {
 
+        Constraint getVelocityConstraint(double a0) {
+            if (a0 < b0) {
+                return a0Left;
+            } else if (a0 > b0) {
+                return a0Right;
+            } else {
+                return Constraint.ofConstant(bv);
+            }
+        }
+
         /*
          * 
          * if a0 > b0
@@ -113,37 +123,38 @@ public class App {
             // Constraint a0RightAvNegative;
             // Constraint a0LeftAvPositive;
             // Constraint a0LeftAvNegative;
-            Constraint a0Right;
-            Constraint a0Left;
-            if (bv < 0) {
-                // 0-------<b0---------------a0>
-                // a0RightAvPositive = Constraint.ofNone();
-                // 0-------<b0---------------<a0
-                // a0RightAvNegative = Constraint.ofMax(bv - 1);
+            var a0Right = Constraint.ofMax(bv - 1);
+            var a0Left = Constraint.ofMin(bv + 1);
 
-                a0Right = Constraint.ofMax(bv - 1);
+            // if (bv < 0) {
+            // // 0-------<b0---------------a0>
+            // // a0RightAvPositive = Constraint.ofNone();
+            // // 0-------<b0---------------<a0
+            // // a0RightAvNegative = Constraint.ofMax(bv - 1);
 
-                // 0-------a0>---------------<b0
-                // a0LeftAvPositive = Constraint.ofAll();
-                // 0-------<a0---------------<b0
-                // a0LeftAvNegative = Constraint.of(bv + 1, 1);
+            // a0Right = Constraint.ofMax(bv - 1);
 
-                a0Left = Constraint.ofMin(bv + 1);
-            } else {
-                // 0-------b0>---------------a0>
-                // a0RightAvPositive = Constraint.of(1, bv - 1);
-                // 0-------b0>---------------<a0
-                // a0RightAvNegative = Constraint.ofAll();
+            // // 0-------a0>---------------<b0
+            // // a0LeftAvPositive = Constraint.ofAll();
+            // // 0-------<a0---------------<b0
+            // // a0LeftAvNegative = Constraint.of(bv + 1, 1);
 
-                a0Right = Constraint.ofMax(bv - 1);
+            // a0Left = Constraint.ofMin(bv + 1);
+            // } else {
+            // // 0-------b0>---------------a0>
+            // // a0RightAvPositive = Constraint.of(1, bv - 1);
+            // // 0-------b0>---------------<a0
+            // // a0RightAvNegative = Constraint.ofAll();
 
-                // 0-------a0>---------------b0>
-                // a0LeftAvPositive = Constraint.ofMin(bv + 1);
-                // 0-------<a0---------------b0>
-                // a0LeftAvNegative = Constraint.ofNone();
+            // a0Right = Constraint.ofMax(bv - 1);
 
-                a0Left = Constraint.ofMin(bv + 1);
-            }
+            // // 0-------a0>---------------b0>
+            // // a0LeftAvPositive = Constraint.ofMin(bv + 1);
+            // // 0-------<a0---------------b0>
+            // // a0LeftAvNegative = Constraint.ofNone();
+
+            // a0Left = Constraint.ofMin(bv + 1);
+            // }
 
             return new HailstoneConstraint(b0, bv, a0Left, a0Right);
         }
@@ -152,6 +163,7 @@ public class App {
     enum ConstraintType {
         // NONE,
         // ALL,
+        Constant,
         MIN,
         MAX,
         // BOTH
@@ -160,9 +172,9 @@ public class App {
 
     record Constraint(ConstraintType type, double minimum, double maximum) {
 
-        // static Constraint of(double min, double max) {
-        // return new Constraint(ConstraintType.BOTH, min, max);
-        // }
+        static Constraint ofConstant(double value) {
+            return new Constraint(ConstraintType.Constant, value, value);
+        }
 
         static Constraint ofMin(double min) {
             return new Constraint(ConstraintType.MIN, min, 0);
@@ -396,10 +408,22 @@ public class App {
 
     List<Hailstone> hailstones2d;
     List<Hailstone> hailstones3d;
+    List<HailstoneConstraint> hailstoneXConstraints;
+    List<HailstoneConstraint> hailstoneYConstraints;
+    List<HailstoneConstraint> hailstoneZConstraints;
 
     public App(String input) {
         hailstones2d = input.lines().map(Hailstone::of2D).toList();
         hailstones3d = input.lines().map(Hailstone::of3D).toList();
+        hailstoneXConstraints = hailstones3d.stream()
+                .map(h -> HailstoneConstraint.of(h.position.x, h.velocity.x)).toList();
+
+        hailstoneYConstraints = hailstones3d.stream()
+                .map(h -> HailstoneConstraint.of(h.position.y, h.velocity.y)).toList();
+
+        hailstoneZConstraints = hailstones3d.stream()
+                .map(h -> HailstoneConstraint.of(h.position.z, h.velocity.z)).toList();
+
     }
 
     public long countInsideIntersections(Vector3 startRange, Vector3 endRange) {

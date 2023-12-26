@@ -3,8 +3,7 @@ package com.benjaminbinford.day24;
 import java.util.List;
 import java.util.Optional;
 
-import org.typemeta.funcj.tuples.Tuple2;
-
+import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
 
 /**
@@ -25,6 +24,9 @@ public class App {
 
         }
 
+        default boolean intersects() {
+            return this instanceof PathInside || this instanceof PathOutside;
+        }
     }
 
     record PathInside(Vector3 intersection, double t, double s) implements PathResult {
@@ -58,6 +60,127 @@ public class App {
     }
 
     private static final double EPSILON = 1e-9;
+
+    record HailstoneConstraint(double b0, double bv, Constraint a0Left, Constraint a0Right) {
+
+        /*
+         * 
+         * if a0 > b0
+         * 
+         * 0-------b0---------------a0
+         * if av = bv
+         * no values
+         * if av > 0 and bv >0
+         * 0-------b0>---------------a0>
+         * av < bv
+         * 
+         * 
+         * if av <0 and bv >0
+         * 0-------b0>---------------<a0
+         * all values
+         * if av>0 and bv < 0
+         * 0-------<b0---------------a0>
+         * no values
+         * 
+         * if av < 0 and bv <0
+         * 0-------<b0---------------<a0
+         * av>bv
+         * 
+         * else if b0 > a0
+         * 0-------a0---------------b0
+         * if av = bv
+         * no values
+         * 
+         * if av > 0 and bv >0
+         * 0-------a0>---------------b0>
+         * av > bv
+         * 
+         * 
+         * if av <0 and bv >0
+         * 0-------<a0---------------b0>
+         * no values
+         * if av>0 and bv < 0
+         * 0-------a0>---------------<b0
+         * all values
+         * 
+         * if av < 0 and bv <0
+         * 0-------<a0---------------<b0
+         * av<bv
+         */
+        static HailstoneConstraint of(double b0, double bv) {
+
+            // Constraint a0RightAvPositive;
+            // Constraint a0RightAvNegative;
+            // Constraint a0LeftAvPositive;
+            // Constraint a0LeftAvNegative;
+            Constraint a0Right;
+            Constraint a0Left;
+            if (bv < 0) {
+                // 0-------<b0---------------a0>
+                // a0RightAvPositive = Constraint.ofNone();
+                // 0-------<b0---------------<a0
+                // a0RightAvNegative = Constraint.ofMax(bv - 1);
+
+                a0Right = Constraint.ofMax(bv - 1);
+
+                // 0-------a0>---------------<b0
+                // a0LeftAvPositive = Constraint.ofAll();
+                // 0-------<a0---------------<b0
+                // a0LeftAvNegative = Constraint.of(bv + 1, 1);
+
+                a0Left = Constraint.ofMin(bv + 1);
+            } else {
+                // 0-------b0>---------------a0>
+                // a0RightAvPositive = Constraint.of(1, bv - 1);
+                // 0-------b0>---------------<a0
+                // a0RightAvNegative = Constraint.ofAll();
+
+                a0Right = Constraint.ofMax(bv - 1);
+
+                // 0-------a0>---------------b0>
+                // a0LeftAvPositive = Constraint.ofMin(bv + 1);
+                // 0-------<a0---------------b0>
+                // a0LeftAvNegative = Constraint.ofNone();
+
+                a0Left = Constraint.ofMin(bv + 1);
+            }
+
+            return new HailstoneConstraint(b0, bv, a0Left, a0Right);
+        }
+    }
+
+    enum ConstraintType {
+        // NONE,
+        // ALL,
+        MIN,
+        MAX,
+        // BOTH
+
+    }
+
+    record Constraint(ConstraintType type, double minimum, double maximum) {
+
+        // static Constraint of(double min, double max) {
+        // return new Constraint(ConstraintType.BOTH, min, max);
+        // }
+
+        static Constraint ofMin(double min) {
+            return new Constraint(ConstraintType.MIN, min, 0);
+        }
+
+        static Constraint ofMax(double max) {
+            return new Constraint(ConstraintType.MAX, 0, max);
+        }
+
+        // static Constraint ofNone() {
+        // return new Constraint(ConstraintType.NONE, 0, 0);
+        // }
+
+        // static Constraint ofAll() {
+        // return new Constraint(ConstraintType.ALL, 0, 0);
+        // }
+
+    }
 
     record Vector3(double x, double y, double z) {
 
@@ -191,66 +314,82 @@ public class App {
             // a0z + avz*t = az
             // b0z + bvz*s = bz
 
-            var a = this;
+            Hailstone a = this;
 
-            var result = pathIntersects2d(b, startRange, endRange);
-            switch (result) {
-                case PathInside(Vector3 p, double t, double s): {
-                    var az = a.position.z + a.velocity.z * t;
-                    var bz = b.position.z + b.velocity.z * s;
-                    if (epsEquals(az, bz)) {
-                        if (az >= startRange.z && az <= endRange.z) {
-                            return new PathInside(new Vector3(p.x, p.y, az), t, s);
-                        } else {
-                            return new PathOutside(new Vector3(p.x, p.y, az), t, s);
-                        }
-                    } else {
-                        return new PathNonIntersecting();
-                    }
-                }
-                case PathOutside(Vector3 p, double t, double s): {
-                    var az = a.position.z + a.velocity.z * t;
-                    var bz = b.position.z + b.velocity.z * s;
-                    if (epsEquals(az, bz)) {
-                        return new PathOutside(new Vector3(p.x, p.y, az), t, s);
-                    } else {
-                        return new PathNonIntersecting();
-                    }
-                }
-                case PathNonIntersecting():
+            PathResult result = pathIntersects2d(b, startRange, endRange);
+
+            if (result instanceof PathEarlier) {
+                return result;
+            } else if (result instanceof PathNonIntersecting) {
+                return result;
+            } else if (result instanceof PathOutside) {
+                PathOutside resultOutside = (PathOutside) result;
+                double az = a.position.z + a.velocity.z * resultOutside.t;
+                double bz = b.position.z + b.velocity.z * resultOutside.s;
+                if (epsEquals(az, bz)) {
+                    return new PathOutside(new Vector3(resultOutside.intersection.x, resultOutside.intersection.y, az),
+                            resultOutside.t, resultOutside.s);
+                } else {
                     return new PathNonIntersecting();
-                case PathEarlier(EarlierCrossing crossing):
-                    return new PathEarlier(crossing);
-
+                }
+            } else if (result instanceof PathInside) {
+                PathInside r = (PathInside) result;
+                double az = a.position.z + a.velocity.z * r.t;
+                double bz = b.position.z + b.velocity.z * r.s;
+                if (epsEquals(az, bz)) {
+                    if (az >= startRange.z && az <= endRange.z) {
+                        return new PathInside(new Vector3(r.intersection.x, r.intersection.y, az), r.t, r.s);
+                    } else {
+                        return new PathOutside(new Vector3(r.intersection.x, r.intersection.y, az), r.t, r.s);
+                    }
+                } else {
+                    return new PathNonIntersecting();
+                }
+            } else {
+                throw new AdventException("Unknown PathResult type");
             }
 
         }
 
-        Optional<Tuple2<Vector3, Double>> intersects(Hailstone b, Vector3 startRange, Vector3 endRange) {
+        record Intersection(Vector3 position, double t) {
 
+        }
+
+        Intersection intersects(Hailstone b, Vector3 startRange, Vector3 endRange) {
+
+            // y = a0y + avy*t
+            // t = s = (x-a0x)/avx
+            // a0z + avz*t = az
+            // b0z + bvz*s = bz
+            // z = a0z+avz * t
+
+            // x = (avy/avx*a0x - bvy/bvx*b0x + b0y - a0y)/(avy/avx - bvy/bvx)
+            // y = b0y + bvy*(x-b0x)/bvx
+            // z = b0z + bvz*(x-b0x)/bvx = a0z + avz*(x-a0x)/avx
+
+            // unknowns avy, avx, avz, a0x, a0y, a0z;
+
+            //
             var result = pathIntersects3d(b, startRange, endRange);
-            switch (result) {
-                case PathInside(Vector3 p, double t, double s): {
-                    if (epsEquals(t, s)) {
-                        return Optional.of(Tuple2.of(p, t));
-                    } else {
-                        return Optional.empty();
-                    }
 
+            if (result instanceof PathOutside) {
+                PathOutside r = (PathOutside) result;
+                if (epsEquals(r.t, r.s)) {
+                    return new Intersection(r.intersection, r.t);
+                } else {
+                    return null;
                 }
-                case PathOutside(Vector3 p, double t, double s): {
-                    if (epsEquals(t, s)) {
-                        return Optional.of(Tuple2.of(p, t));
-                    } else {
-                        return Optional.empty();
-                    }
+            } else if (result instanceof PathInside) {
+                PathInside r = (PathInside) result;
+                if (epsEquals(r.t, r.s)) {
+                    return new Intersection(r.intersection, r.t);
+                } else {
+                    return null;
                 }
-                case PathNonIntersecting():
-                    return Optional.empty();
-                case PathEarlier(EarlierCrossing crossing):
-                    return Optional.empty();
-
+            } else {
+                return null;
             }
+
         }
 
     }
@@ -276,13 +415,74 @@ public class App {
         return sum;
     }
 
+    public Hailstone findIntersector(Vector3 startRange, Vector3 endRange) {
+        for (var pi = startRange.x; pi <= endRange.x; pi++) {
+            for (var pj = startRange.y; pj <= endRange.y; pj++) {
+                for (var pk = startRange.z; pk <= endRange.z; pk++) {
+
+                    for (var vi = -(endRange.x - startRange.x) / hailstones3d.size(); vi <= (endRange.x - startRange.x)
+                            / hailstones3d.size(); vi++) {
+                        for (var vj = -(endRange.y - startRange.y)
+                                / hailstones3d.size(); vj <= (endRange.y - startRange.y) /
+                                        hailstones3d.size(); vj++) {
+                            for (var vk = -(endRange.z - startRange.z)
+                                    / hailstones3d.size(); vk <= (endRange.z - startRange.z)
+                                            / hailstones3d.size(); vk++) {
+
+                                var p = new Vector3(pi, pj, pk);
+                                var v = new Vector3(vi, vj, vk);
+                                var a = new Hailstone(p, v);
+                                if (hailstones3d.stream()
+                                        .allMatch(b -> a.intersects(b, startRange, endRange) != null)) {
+                                    return a;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        throw new AdventException("No intersector found");
+
+    }
+
+    public Hailstone findIntersector2d(Vector3 startRange, Vector3 endRange) {
+        for (var pi = startRange.x; pi <= endRange.x; pi++) {
+            for (var pj = startRange.y; pj <= endRange.y; pj++) {
+
+                for (var vi = -(endRange.x - startRange.x) / hailstones3d.size(); vi <= (endRange.x - startRange.x)
+                        / hailstones3d.size(); vi++) {
+                    for (var vj = -(endRange.y - startRange.y)
+                            / hailstones3d.size(); vj <= (endRange.y - startRange.y) /
+                                    hailstones3d.size(); vj++) {
+                        {
+
+                            var p = new Vector3(pi, pj, 0);
+                            var v = new Vector3(vi, vj, 0);
+                            var a = new Hailstone(p, v);
+                            if (hailstones3d.stream()
+                                    .allMatch(b -> a.pathIntersects2d(b, startRange, endRange).intersects())) {
+                                return a;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        throw new AdventException("No intersector found");
+
+    }
+
     public static void main(String[] args) {
         final var input = IO.getResource("com/benjaminbinford/day24/input.txt");
 
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        IO.answer(String.format("Part 1: %d", app.countInsideIntersections(new Vector3(200000000000000.0,
+        IO.answer(String.format("Part 1: %d", app.countInsideIntersections(new Vector3(200_000_000_000_000.0,
+                200000000000000.0, 0), new Vector3(400000000000000.0, 400000000000000.0, 0))));
+        IO.answer(String.format("Part 2: %s", app.findIntersector2d(new Vector3(200000000000000.0,
                 200000000000000.0, 0), new Vector3(400000000000000.0, 400000000000000.0, 0))));
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));

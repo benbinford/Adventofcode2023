@@ -1,7 +1,8 @@
 package com.benjaminbinford.day24;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.function.DoubleFunction;
+import java.util.function.ToDoubleFunction;
 
 import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
@@ -161,19 +162,27 @@ public class App {
     }
 
     enum ConstraintType {
-        // NONE,
+        NONE,
         // ALL,
-        Constant,
+        CONSTANT,
         MIN,
         MAX,
-        // BOTH
+        BOTH
 
     }
 
     record Constraint(ConstraintType type, double minimum, double maximum) {
 
         static Constraint ofConstant(double value) {
-            return new Constraint(ConstraintType.Constant, value, value);
+            return new Constraint(ConstraintType.CONSTANT, value, value);
+        }
+
+        static Constraint of(double min, double max) {
+            if (max < min) {
+                return ofNone();
+            } else {
+                return new Constraint(ConstraintType.BOTH, min, max);
+            }
         }
 
         static Constraint ofMin(double min) {
@@ -184,9 +193,9 @@ public class App {
             return new Constraint(ConstraintType.MAX, 0, max);
         }
 
-        // static Constraint ofNone() {
-        // return new Constraint(ConstraintType.NONE, 0, 0);
-        // }
+        static Constraint ofNone() {
+            return new Constraint(ConstraintType.NONE, 0, 0);
+        }
 
         // static Constraint ofAll() {
         // return new Constraint(ConstraintType.ALL, 0, 0);
@@ -231,6 +240,10 @@ public class App {
             return epsEquals(x, other.x) && epsEquals(y, other.y)
                     && epsEquals(z, other.z);
         }
+
+        public Vector3 to1d() {
+            return new Vector3(x, 0, 0);
+        }
     }
 
     static boolean epsEquals(double a, double b) {
@@ -246,6 +259,12 @@ public class App {
         static Hailstone of2D(String rep) {
             Hailstone h = of3D(rep);
             return new Hailstone(h.position().to2d(), h.velocity().to2d());
+
+        }
+
+        static Hailstone of1D(String rep) {
+            Hailstone h = of3D(rep);
+            return new Hailstone(h.position().to1d(), h.velocity().to1d());
 
         }
 
@@ -367,6 +386,37 @@ public class App {
 
         }
 
+        Intersection intersects1d(Hailstone b, ToDoubleFunction<Vector3> dimension) {
+
+            // x = a0 + av * t;
+            // x = b0 + bv *t;
+            // 0 = a0-b0 +(av -bv)*t
+            // b0-a0 = (av-bv)*t
+            // t = (b0-a0)/(av-bv)
+
+            var a0 = dimension.applyAsDouble(position);
+            var av = dimension.applyAsDouble(velocity);
+            var b0 = dimension.applyAsDouble(b.position);
+            var bv = dimension.applyAsDouble(b.velocity);
+
+            if (av == bv) {
+                if (a0 == b0) {
+                    return new Intersection(new Vector3(a0, 0, 0), 0);
+                } else {
+                    return null;
+                }
+            }
+
+            var t = (b0 - a0) / (av - bv);
+            var it = Math.round(t);
+            if (t < 0 || !epsEquals(t, it)) {
+                return null;
+            } else {
+                return new Intersection(new Vector3(a0 + av * it, 0, 0), it);
+            }
+
+        }
+
         Intersection intersects(Hailstone b, Vector3 startRange, Vector3 endRange) {
 
             // y = a0y + avy*t
@@ -406,6 +456,7 @@ public class App {
 
     }
 
+    List<Hailstone> hailstones1d;
     List<Hailstone> hailstones2d;
     List<Hailstone> hailstones3d;
     List<HailstoneConstraint> hailstoneXConstraints;
@@ -413,6 +464,7 @@ public class App {
     List<HailstoneConstraint> hailstoneZConstraints;
 
     public App(String input) {
+        hailstones1d = input.lines().map(Hailstone::of1D).toList();
         hailstones2d = input.lines().map(Hailstone::of2D).toList();
         hailstones3d = input.lines().map(Hailstone::of3D).toList();
         hailstoneXConstraints = hailstones3d.stream()
@@ -439,34 +491,82 @@ public class App {
         return sum;
     }
 
-    public Hailstone findIntersector(Vector3 startRange, Vector3 endRange) {
-        for (var pi = startRange.x; pi <= endRange.x; pi++) {
-            for (var pj = startRange.y; pj <= endRange.y; pj++) {
-                for (var pk = startRange.z; pk <= endRange.z; pk++) {
-
-                    for (var vi = -(endRange.x - startRange.x) / hailstones3d.size(); vi <= (endRange.x - startRange.x)
-                            / hailstones3d.size(); vi++) {
-                        for (var vj = -(endRange.y - startRange.y)
-                                / hailstones3d.size(); vj <= (endRange.y - startRange.y) /
-                                        hailstones3d.size(); vj++) {
-                            for (var vk = -(endRange.z - startRange.z)
-                                    / hailstones3d.size(); vk <= (endRange.z - startRange.z)
-                                            / hailstones3d.size(); vk++) {
-
-                                var p = new Vector3(pi, pj, pk);
-                                var v = new Vector3(vi, vj, vk);
-                                var a = new Hailstone(p, v);
-                                if (hailstones3d.stream()
-                                        .allMatch(b -> a.intersects(b, startRange, endRange) != null)) {
-                                    return a;
-                                }
-                            }
-                        }
-                    }
+    public Hailstone find1dIntersector(Vector3 startRange, Vector3 endRange, ToDoubleFunction<Vector3> dimension,
+            DoubleFunction<Vector3> fromDimension, List<HailstoneConstraint> constraints) {
+        double velocityMax = (dimension.applyAsDouble(endRange) - dimension.applyAsDouble(startRange))
+                / hailstones3d.size();
+        for (var a0 = dimension.applyAsDouble(startRange); a0 <= dimension.applyAsDouble(endRange); a0++) {
+            var cons = combineConstraints(constraints, a0, velocityMax);
+            if (cons.type() == ConstraintType.NONE) {
+                continue;
+            }
+            for (var av = cons.minimum(); av <= cons.maximum(); av++) {
+                var a = new Hailstone(fromDimension.apply(a0), fromDimension.apply(av));
+                if (hailstones3d.stream()
+                        .allMatch(b -> a.intersects1d(b, dimension) != null)) {
+                    return a;
                 }
             }
         }
-        throw new AdventException("No intersector found");
+
+        throw new AdventException("No interceptor found");
+    }
+
+    private static Constraint combineConstraints(List<HailstoneConstraint> cs, double a0,
+            double velocityMax) {
+        var c1 = Constraint.of(-velocityMax, velocityMax);
+        for (var i = 0; i < cs.size(); i++) {
+            var c2 = cs.get(i).getVelocityConstraint(a0);
+            c1 = combineConstraints(c1, c2);
+        }
+
+        return c1;
+    }
+
+    private static Constraint combineConstraints(Constraint c1, Constraint c2) {
+        assert (c1.type() == ConstraintType.BOTH || c1.type() == ConstraintType.NONE
+                || c1.type() == ConstraintType.CONSTANT);
+        if (c1.type() == ConstraintType.CONSTANT || c1.type() == ConstraintType.NONE) {
+            return c1;
+        }
+
+        switch (c2.type()) {
+            case BOTH:
+                var min = Math.max(c1.minimum(), c2.minimum());
+                var max = Math.min(c1.maximum(), c2.maximum());
+                return Constraint.of(min, max);
+            case CONSTANT:
+                if (c1.minimum() <= c2.minimum() && c1.maximum() >= c2.minimum()) {
+                    return Constraint.ofConstant(c2.minimum());
+                } else {
+                    return Constraint.ofNone();
+                }
+            case MAX:
+                return Constraint.of(c1.minimum(), Math.min(c1.maximum(), c2.maximum()));
+            case MIN:
+                return Constraint.of(Math.max(c1.minimum(), c2.minimum()), c1.maximum());
+            case NONE:
+                return c2;
+            default:
+                throw new AdventException("Unknown constraint type");
+
+        }
+    }
+
+    public Hailstone findIntersector(Vector3 startRange, Vector3 endRange) {
+
+        var x = find1dIntersector(startRange, endRange,
+                Vector3::x,
+                a -> new Vector3(a, 0, 0), hailstoneXConstraints);
+        var y = find1dIntersector(startRange, endRange,
+                Vector3::y,
+                a -> new Vector3(0, a, 0), hailstoneYConstraints);
+        var z = find1dIntersector(startRange, endRange,
+                Vector3::z,
+                a -> new Vector3(0, 0, a), hailstoneZConstraints);
+
+        return new Hailstone(new Vector3(x.position().x(), y.position().y(), z.position().z()),
+                new Vector3(x.velocity().x(), y.velocity().y(), z.velocity().z()));
 
     }
 

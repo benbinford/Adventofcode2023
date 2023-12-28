@@ -1,15 +1,13 @@
 package com.benjaminbinford.day24;
 
+import java.math.BigDecimal;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.DoubleFunction;
-import java.util.function.ToDoubleFunction;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.ArrayRealVector;
-import org.apache.commons.math3.linear.DecompositionSolver;
-import org.apache.commons.math3.linear.LUDecomposition;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.ArrayFieldVector;
+import org.apache.commons.math3.linear.FieldLUDecomposition;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.util.BigReal;
 
 import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
@@ -69,147 +67,6 @@ public class App {
 
     private static final double EPSILON = 1e-9;
 
-    record HailstoneConstraint(double b0, double bv, Constraint a0Left, Constraint a0Right) {
-
-        Constraint getVelocityConstraint(double a0) {
-            if (a0 < b0) {
-                return a0Left;
-            } else if (a0 > b0) {
-                return a0Right;
-            } else {
-                return Constraint.ofConstant(bv);
-            }
-        }
-
-        /*
-         * 
-         * if a0 > b0
-         * 
-         * 0-------b0---------------a0
-         * if av = bv
-         * no values
-         * if av > 0 and bv >0
-         * 0-------b0>---------------a0>
-         * av < bv
-         * 
-         * 
-         * if av <0 and bv >0
-         * 0-------b0>---------------<a0
-         * all values
-         * if av>0 and bv < 0
-         * 0-------<b0---------------a0>
-         * no values
-         * 
-         * if av < 0 and bv <0
-         * 0-------<b0---------------<a0
-         * av>bv
-         * 
-         * else if b0 > a0
-         * 0-------a0---------------b0
-         * if av = bv
-         * no values
-         * 
-         * if av > 0 and bv >0
-         * 0-------a0>---------------b0>
-         * av > bv
-         * 
-         * 
-         * if av <0 and bv >0
-         * 0-------<a0---------------b0>
-         * no values
-         * if av>0 and bv < 0
-         * 0-------a0>---------------<b0
-         * all values
-         * 
-         * if av < 0 and bv <0
-         * 0-------<a0---------------<b0
-         * av<bv
-         */
-        static HailstoneConstraint of(double b0, double bv) {
-
-            // Constraint a0RightAvPositive;
-            // Constraint a0RightAvNegative;
-            // Constraint a0LeftAvPositive;
-            // Constraint a0LeftAvNegative;
-            var a0Right = Constraint.ofMax(bv - 1);
-            var a0Left = Constraint.ofMin(bv + 1);
-
-            // if (bv < 0) {
-            // // 0-------<b0---------------a0>
-            // // a0RightAvPositive = Constraint.ofNone();
-            // // 0-------<b0---------------<a0
-            // // a0RightAvNegative = Constraint.ofMax(bv - 1);
-
-            // a0Right = Constraint.ofMax(bv - 1);
-
-            // // 0-------a0>---------------<b0
-            // // a0LeftAvPositive = Constraint.ofAll();
-            // // 0-------<a0---------------<b0
-            // // a0LeftAvNegative = Constraint.of(bv + 1, 1);
-
-            // a0Left = Constraint.ofMin(bv + 1);
-            // } else {
-            // // 0-------b0>---------------a0>
-            // // a0RightAvPositive = Constraint.of(1, bv - 1);
-            // // 0-------b0>---------------<a0
-            // // a0RightAvNegative = Constraint.ofAll();
-
-            // a0Right = Constraint.ofMax(bv - 1);
-
-            // // 0-------a0>---------------b0>
-            // // a0LeftAvPositive = Constraint.ofMin(bv + 1);
-            // // 0-------<a0---------------b0>
-            // // a0LeftAvNegative = Constraint.ofNone();
-
-            // a0Left = Constraint.ofMin(bv + 1);
-            // }
-
-            return new HailstoneConstraint(b0, bv, a0Left, a0Right);
-        }
-    }
-
-    enum ConstraintType {
-        NONE,
-        // ALL,
-        CONSTANT,
-        MIN,
-        MAX,
-        BOTH
-
-    }
-
-    record Constraint(ConstraintType type, double minimum, double maximum) {
-
-        static Constraint ofConstant(double value) {
-            return new Constraint(ConstraintType.CONSTANT, value, value);
-        }
-
-        static Constraint of(double min, double max) {
-            if (max < min) {
-                return ofNone();
-            } else {
-                return new Constraint(ConstraintType.BOTH, min, max);
-            }
-        }
-
-        static Constraint ofMin(double min) {
-            return new Constraint(ConstraintType.MIN, min, 0);
-        }
-
-        static Constraint ofMax(double max) {
-            return new Constraint(ConstraintType.MAX, 0, max);
-        }
-
-        static Constraint ofNone() {
-            return new Constraint(ConstraintType.NONE, 0, 0);
-        }
-
-        // static Constraint ofAll() {
-        // return new Constraint(ConstraintType.ALL, 0, 0);
-        // }
-
-    }
-
     record Vector3(double x, double y, double z) {
 
         @Override
@@ -261,18 +118,6 @@ public class App {
 
         Vector3 positionAt(double t) {
             return position.add(velocity.multiply(t));
-        }
-
-        static Hailstone of2D(String rep) {
-            Hailstone h = of3D(rep);
-            return new Hailstone(h.position().to2d(), h.velocity().to2d());
-
-        }
-
-        static Hailstone of1D(String rep) {
-            Hailstone h = of3D(rep);
-            return new Hailstone(h.position().to1d(), h.velocity().to1d());
-
         }
 
         static Hailstone of3D(String rep) {
@@ -361,84 +206,47 @@ public class App {
             } else if (result instanceof PathNonIntersecting) {
                 return result;
             } else if (result instanceof PathOutside) {
-                PathOutside resultOutside = (PathOutside) result;
-                double az = a.position.z + a.velocity.z * resultOutside.t;
-                double bz = b.position.z + b.velocity.z * resultOutside.s;
-                if (epsEquals(az, bz)) {
-                    return new PathOutside(new Vector3(resultOutside.intersection.x, resultOutside.intersection.y, az),
-                            resultOutside.t, resultOutside.s);
-                } else {
-                    return new PathNonIntersecting();
-                }
+                return confirmZIntersection(b, a, (PathOutside) result);
             } else if (result instanceof PathInside) {
-                PathInside r = (PathInside) result;
-                double az = a.position.z + a.velocity.z * r.t;
-                double bz = b.position.z + b.velocity.z * r.s;
-                if (epsEquals(az, bz)) {
-                    if (az >= startRange.z && az <= endRange.z) {
-                        return new PathInside(new Vector3(r.intersection.x, r.intersection.y, az), r.t, r.s);
-                    } else {
-                        return new PathOutside(new Vector3(r.intersection.x, r.intersection.y, az), r.t, r.s);
-                    }
-                } else {
-                    return new PathNonIntersecting();
-                }
+                return confirmZIntersection(b, startRange, endRange, a, (PathInside) result);
             } else {
                 throw new AdventException("Unknown PathResult type");
             }
 
         }
 
-        record Intersection(Vector3 position, double t) {
-
+        private PathResult confirmZIntersection(Hailstone b, Vector3 startRange, Vector3 endRange, Hailstone a,
+                PathInside r) {
+            double az = a.position.z + a.velocity.z * r.t;
+            double bz = b.position.z + b.velocity.z * r.s;
+            if (epsEquals(az, bz)) {
+                if (az >= startRange.z && az <= endRange.z) {
+                    return new PathInside(new Vector3(r.intersection.x, r.intersection.y, az), r.t, r.s);
+                } else {
+                    return new PathOutside(new Vector3(r.intersection.x, r.intersection.y, az), r.t, r.s);
+                }
+            } else {
+                return new PathNonIntersecting();
+            }
         }
 
-        Intersection intersects1d(Hailstone b, ToDoubleFunction<Vector3> dimension) {
-
-            // x = a0 + av * t;
-            // x = b0 + bv *t;
-            // 0 = a0-b0 +(av -bv)*t
-            // b0-a0 = (av-bv)*t
-            // t = (b0-a0)/(av-bv)
-
-            var a0 = dimension.applyAsDouble(position);
-            var av = dimension.applyAsDouble(velocity);
-            var b0 = dimension.applyAsDouble(b.position);
-            var bv = dimension.applyAsDouble(b.velocity);
-
-            if (av == bv) {
-                if (a0 == b0) {
-                    return new Intersection(new Vector3(a0, 0, 0), 0);
-                } else {
-                    return null;
-                }
-            }
-
-            var t = (b0 - a0) / (av - bv);
-            var it = Math.round(t);
-            if (t < 0 || !epsEquals(t, it)) {
-                return null;
+        private PathResult confirmZIntersection(Hailstone b, Hailstone a, PathOutside resultOutside) {
+            double az = a.position.z + a.velocity.z * resultOutside.t;
+            double bz = b.position.z + b.velocity.z * resultOutside.s;
+            if (epsEquals(az, bz)) {
+                return new PathOutside(new Vector3(resultOutside.intersection.x, resultOutside.intersection.y, az),
+                        resultOutside.t, resultOutside.s);
             } else {
-                return new Intersection(new Vector3(a0 + av * it, 0, 0), it);
+                return new PathNonIntersecting();
             }
+        }
+
+        record Intersection(Vector3 position, double t) {
 
         }
 
         Intersection intersects(Hailstone b, Vector3 startRange, Vector3 endRange) {
 
-            // y = a0y + avy*t
-            // t = s = (x-a0x)/avx
-            // a0z + avz*t = az
-            // b0z + bvz*s = bz
-            // z = a0z+avz * t
-
-            // x = (avy/avx*a0x - bvy/bvx*b0x + b0y - a0y)/(avy/avx - bvy/bvx)
-            // y = b0y + bvy*(x-b0x)/bvx
-            // z = b0z + bvz*(x-b0x)/bvx = a0z + avz*(x-a0x)/avx
-
-            // unknowns avy, avx, avz, a0x, a0y, a0z;
-
-            //
             var result = pathIntersects3d(b, startRange, endRange);
 
             if (result instanceof PathOutside) {
@@ -463,101 +271,24 @@ public class App {
 
     }
 
-    List<Hailstone> hailstones1d;
-    List<Hailstone> hailstones2d;
     List<Hailstone> hailstones3d;
-    List<HailstoneConstraint> hailstoneXConstraints;
-    List<HailstoneConstraint> hailstoneYConstraints;
-    List<HailstoneConstraint> hailstoneZConstraints;
 
     public App(String input) {
-        hailstones1d = input.lines().map(Hailstone::of1D).toList();
-        hailstones2d = input.lines().map(Hailstone::of2D).toList();
         hailstones3d = input.lines().map(Hailstone::of3D).toList();
-        hailstoneXConstraints = hailstones3d.stream()
-                .map(h -> HailstoneConstraint.of(h.position.x, h.velocity.x)).toList();
-
-        hailstoneYConstraints = hailstones3d.stream()
-                .map(h -> HailstoneConstraint.of(h.position.y, h.velocity.y)).toList();
-
-        hailstoneZConstraints = hailstones3d.stream()
-                .map(h -> HailstoneConstraint.of(h.position.z, h.velocity.z)).toList();
 
     }
 
     public long countInsideIntersections(Vector3 startRange, Vector3 endRange) {
 
         var sum = 0l;
-        for (var i = 0; i < hailstones2d.size() - 1; i++) {
-            for (var j = i + 1; j < hailstones2d.size(); j++) {
-                if (hailstones2d.get(i).pathIntersects3d(hailstones2d.get(j), startRange, endRange).isInside()) {
+        for (var i = 0; i < hailstones3d.size() - 1; i++) {
+            for (var j = i + 1; j < hailstones3d.size(); j++) {
+                if (hailstones3d.get(i).pathIntersects2d(hailstones3d.get(j), startRange, endRange).isInside()) {
                     sum++;
                 }
             }
         }
         return sum;
-    }
-
-    public Hailstone find1dIntersector(Vector3 startRange, Vector3 endRange, ToDoubleFunction<Vector3> dimension,
-            DoubleFunction<Vector3> fromDimension, List<HailstoneConstraint> constraints) {
-        double velocityMax = (dimension.applyAsDouble(endRange) - dimension.applyAsDouble(startRange))
-                / hailstones3d.size();
-        for (var a0 = dimension.applyAsDouble(startRange); a0 <= dimension.applyAsDouble(endRange); a0++) {
-            var cons = combineConstraints(constraints, a0, velocityMax);
-            if (cons.type() == ConstraintType.NONE) {
-                continue;
-            }
-            for (var av = cons.minimum(); av <= cons.maximum(); av++) {
-                var a = new Hailstone(fromDimension.apply(a0), fromDimension.apply(av));
-                if (hailstones3d.stream()
-                        .allMatch(b -> a.intersects1d(b, dimension) != null)) {
-                    return a;
-                }
-            }
-        }
-
-        throw new AdventException("No interceptor found");
-    }
-
-    private static Constraint combineConstraints(List<HailstoneConstraint> cs, double a0,
-            double velocityMax) {
-        var c1 = Constraint.of(-velocityMax, velocityMax);
-        for (var i = 0; i < cs.size(); i++) {
-            var c2 = cs.get(i).getVelocityConstraint(a0);
-            c1 = combineConstraints(c1, c2);
-        }
-
-        return c1;
-    }
-
-    private static Constraint combineConstraints(Constraint c1, Constraint c2) {
-        assert (c1.type() == ConstraintType.BOTH || c1.type() == ConstraintType.NONE
-                || c1.type() == ConstraintType.CONSTANT);
-        if (c1.type() == ConstraintType.CONSTANT || c1.type() == ConstraintType.NONE) {
-            return c1;
-        }
-
-        switch (c2.type()) {
-            case BOTH:
-                var min = Math.max(c1.minimum(), c2.minimum());
-                var max = Math.min(c1.maximum(), c2.maximum());
-                return Constraint.of(min, max);
-            case CONSTANT:
-                if (c1.minimum() <= c2.minimum() && c1.maximum() >= c2.minimum()) {
-                    return Constraint.ofConstant(c2.minimum());
-                } else {
-                    return Constraint.ofNone();
-                }
-            case MAX:
-                return Constraint.of(c1.minimum(), Math.min(c1.maximum(), c2.maximum()));
-            case MIN:
-                return Constraint.of(Math.max(c1.minimum(), c2.minimum()), c1.maximum());
-            case NONE:
-                return c2;
-            default:
-                throw new AdventException("Unknown constraint type");
-
-        }
     }
 
     public Hailstone findIntersector() {
@@ -568,40 +299,40 @@ public class App {
         var d = hailstones3d.get(3);
         var e = hailstones3d.get(4);
 
-        var a0x = a.position.x;
-        var a0y = a.position.y;
-        var a0z = a.position.z;
-        var avx = a.velocity.x;
-        var avy = a.velocity.y;
-        var avz = a.velocity.z;
+        var a0x = BigDecimal.valueOf(a.position.x);
+        var a0y = BigDecimal.valueOf(a.position.y);
+        var a0z = BigDecimal.valueOf(a.position.z);
+        var avx = BigDecimal.valueOf(a.velocity.x);
+        var avy = BigDecimal.valueOf(a.velocity.y);
+        var avz = BigDecimal.valueOf(a.velocity.z);
 
-        var b0x = b.position.x;
-        var b0y = b.position.y;
-        var b0z = b.position.z;
-        var bvx = b.velocity.x;
-        var bvy = b.velocity.y;
-        var bvz = b.velocity.z;
+        var b0x = BigDecimal.valueOf(b.position.x);
+        var b0y = BigDecimal.valueOf(b.position.y);
+        var b0z = BigDecimal.valueOf(b.position.z);
+        var bvx = BigDecimal.valueOf(b.velocity.x);
+        var bvy = BigDecimal.valueOf(b.velocity.y);
+        var bvz = BigDecimal.valueOf(b.velocity.z);
 
-        var c0x = c.position.x;
-        var c0y = c.position.y;
-        var c0z = c.position.z;
-        var cvx = c.velocity.x;
-        var cvy = c.velocity.y;
-        var cvz = c.velocity.z;
+        var c0x = BigDecimal.valueOf(c.position.x);
+        var c0y = BigDecimal.valueOf(c.position.y);
+        var c0z = BigDecimal.valueOf(c.position.z);
+        var cvx = BigDecimal.valueOf(c.velocity.x);
+        var cvy = BigDecimal.valueOf(c.velocity.y);
+        var cvz = BigDecimal.valueOf(c.velocity.z);
 
-        var d0x = d.position.x;
-        var d0y = d.position.y;
-        var d0z = d.position.z;
-        var dvx = d.velocity.x;
-        var dvy = d.velocity.y;
-        var dvz = d.velocity.z;
+        var d0x = BigDecimal.valueOf(d.position.x);
+        var d0y = BigDecimal.valueOf(d.position.y);
+        var d0z = BigDecimal.valueOf(d.position.z);
+        var dvx = BigDecimal.valueOf(d.velocity.x);
+        var dvy = BigDecimal.valueOf(d.velocity.y);
+        var dvz = BigDecimal.valueOf(d.velocity.z);
 
-        var e0x = e.position.x;
-        var e0y = e.position.y;
-        var e0z = e.position.z;
-        var evx = e.velocity.x;
-        var evy = e.velocity.y;
-        var evz = e.velocity.z;
+        var e0x = BigDecimal.valueOf(e.position.x);
+        var e0y = BigDecimal.valueOf(e.position.y);
+        var e0z = BigDecimal.valueOf(e.position.z);
+        var evx = BigDecimal.valueOf(e.velocity.x);
+        var evy = BigDecimal.valueOf(e.velocity.y);
+        var evz = BigDecimal.valueOf(e.velocity.z);
 
         /*
          * see math.txt
@@ -609,59 +340,94 @@ public class App {
          *
          */
 
-        RealMatrix coefficients = new Array2DRowRealMatrix(
-                new double[][] {
-                        { a0x - b0x, avy - bvy, -a0y + b0y, -avx + bvx },
-                        { b0x - c0x, bvy - cvy, -b0y + c0y, -bvx + cvx },
-                        { c0x - d0x, cvy - dvy, -c0y + d0y, -cvx + dvx },
-                        { d0x - e0x, dvy - evy, -d0y + e0y, -dvx + evx }
-                },
-                false);
+        var coefficients = new BigDecimal[][] {
+                { a0x.subtract(b0x), avy.subtract(bvy), a0y.negate().add(b0y), avx.negate().add(bvx) },
+                { b0x.subtract(c0x), bvy.subtract(cvy), b0y.negate().add(c0y), bvx.negate().add(cvx) },
+                { c0x.subtract(d0x), cvy.subtract(dvy), c0y.negate().add(d0y), cvx.negate().add(dvx) },
+                { d0x.subtract(e0x), dvy.subtract(evy), d0y.negate().add(e0y), dvx.negate().add(evx) }
+        };
 
-        RealMatrix coefficientsZ = new Array2DRowRealMatrix(
-                new double[][] {
-                        { a0x - b0x, avz - bvz, -a0z + b0z, -avx + bvx },
-                        { b0x - c0x, bvz - cvz, -b0z + c0z, -bvx + cvx },
-                        { c0x - d0x, cvz - dvz, -c0z + d0z, -cvx + dvx },
-                        { d0x - e0x, dvz - evz, -d0z + e0z, -dvx + evx }
-                },
-                false);
+        var coefficientsZ = new BigDecimal[][] {
+                { a0x.subtract(b0x), avz.subtract(bvz), a0z.negate().add(b0z), avx.negate().add(bvx) },
+                { b0x.subtract(c0x), bvz.subtract(cvz), b0z.negate().add(c0z), bvx.negate().add(cvx) },
+                { c0x.subtract(d0x), cvz.subtract(dvz), c0z.negate().add(d0z), cvx.negate().add(dvx) },
+                { d0x.subtract(e0x), dvz.subtract(evz), d0z.negate().add(e0z), dvx.negate().add(evx) }
+        };
 
-        RealVector constants = new ArrayRealVector(
-                new double[] {
-                        -a0y * avx + a0x * avy + b0y * bvx - b0x * bvy,
-                        -b0y * bvx + b0x * bvy + c0y * cvx - c0x * cvy,
-                        -c0y * cvx + c0x * cvy + d0y * dvx - d0x * dvy,
-                        -d0y * dvx + d0x * dvy + e0y * evx - e0x * evy },
-                false);
+        var constants = new BigDecimal[] {
+                a0y.negate().multiply(avx).add(a0x.multiply(avy)).add(b0y.multiply(bvx)).subtract(b0x.multiply(bvy)),
+                b0y.negate().multiply(bvx).add(b0x.multiply(bvy)).add(c0y.multiply(cvx)).subtract(c0x.multiply(cvy)),
+                c0y.negate().multiply(cvx).add(c0x.multiply(cvy)).add(d0y.multiply(dvx)).subtract(d0x.multiply(dvy)),
+                d0y.negate().multiply(dvx).add(d0x.multiply(dvy)).add(e0y.multiply(evx)).subtract(e0x.multiply(evy)) };
 
-        RealVector constantsZ = new ArrayRealVector(
-                new double[] {
-                        -a0z * avx + a0x * avz + b0z * bvx - b0x * bvz,
-                        -b0z * bvx + b0x * bvz + c0z * cvx - c0x * cvz,
-                        -c0z * cvx + c0x * cvz + d0z * dvx - d0x * dvz,
-                        -d0z * dvx + d0x * dvz + e0z * evx - e0x * evz },
-                false);
+        var constantsZ = new BigDecimal[] {
+                a0z.negate().multiply(avx).add(a0x.multiply(avz)).add(b0z.multiply(bvx)).subtract(b0x.multiply(bvz)),
+                b0z.negate().multiply(bvx).add(b0x.multiply(bvz)).add(c0z.multiply(cvx)).subtract(c0x.multiply(cvz)),
+                c0z.negate().multiply(cvx).add(c0x.multiply(cvz)).add(d0z.multiply(dvx)).subtract(d0x.multiply(dvz)),
+                d0z.negate().multiply(dvx).add(d0x.multiply(dvz)).add(e0z.multiply(evx)).subtract(e0x.multiply(evz)) };
 
-        DecompositionSolver solver = new LUDecomposition(coefficients, 1e-17).getSolver();
+        var coefficientsDoubles = new double[][] {
+                { a0x.doubleValue() - b0x.doubleValue(), avy.doubleValue() - bvy.doubleValue(),
+                        -a0y.doubleValue() + b0y.doubleValue(), -avx.doubleValue() + bvx.doubleValue() },
+                { b0x.doubleValue() - c0x.doubleValue(), bvy.doubleValue() - cvy.doubleValue(),
+                        -b0y.doubleValue() + c0y.doubleValue(), -bvx.doubleValue() + cvx.doubleValue() },
+                { c0x.doubleValue() - d0x.doubleValue(), cvy.doubleValue() - dvy.doubleValue(),
+                        -c0y.doubleValue() + d0y.doubleValue(), -cvx.doubleValue() + dvx.doubleValue() },
+                { d0x.doubleValue() - e0x.doubleValue(), dvy.doubleValue() - evy.doubleValue(),
+                        -d0y.doubleValue() + e0y.doubleValue(), -dvx.doubleValue() + evx.doubleValue() }
+        };
 
-        DecompositionSolver solverZ = new LUDecomposition(coefficientsZ, 1e-17).getSolver();
+        var coefficientsZDoubles = new double[][] {
+                { a0x.doubleValue() - b0x.doubleValue(), avz.doubleValue() - bvz.doubleValue(),
+                        -a0z.doubleValue() + b0z.doubleValue(), -avx.doubleValue() + bvx.doubleValue() },
+                { b0x.doubleValue() - c0x.doubleValue(), bvz.doubleValue() - cvz.doubleValue(),
+                        -b0z.doubleValue() + c0z.doubleValue(), -bvx.doubleValue() + cvx.doubleValue() },
+                { c0x.doubleValue() - d0x.doubleValue(), cvz.doubleValue() - dvz.doubleValue(),
+                        -c0z.doubleValue() + d0z.doubleValue(), -cvx.doubleValue() + dvx.doubleValue() },
+                { d0x.doubleValue() - e0x.doubleValue(), dvz.doubleValue() - evz.doubleValue(),
+                        -d0z.doubleValue() + e0z.doubleValue(), -dvx.doubleValue() + evx.doubleValue() }
+        };
 
-        RealVector solution = solver.solve(constants);
+        var constantsDoubles = new double[] {
+                -a0y.doubleValue() * avx.doubleValue() + a0x.doubleValue() * avy.doubleValue()
+                        + b0y.doubleValue() * bvx.doubleValue() - b0x.doubleValue() * bvy.doubleValue(),
+                -b0y.doubleValue() * bvx.doubleValue() + b0x.doubleValue() * bvy.doubleValue()
+                        + c0y.doubleValue() * cvx.doubleValue() - c0x.doubleValue() * cvy.doubleValue(),
+                -c0y.doubleValue() * cvx.doubleValue() + c0x.doubleValue() * cvy.doubleValue()
+                        + d0y.doubleValue() * dvx.doubleValue() - d0x.doubleValue() * dvy.doubleValue(),
+                -d0y.doubleValue() * dvx.doubleValue() + d0x.doubleValue() * dvy.doubleValue()
+                        + e0y.doubleValue() * evx.doubleValue() - e0x.doubleValue() * evy.doubleValue() };
 
-        long hvy = (long) solution.getEntry(0);
-        long h0x = (long) solution.getEntry(1);
-        long hvx = (long) solution.getEntry(2);
-        long h0y = (long) solution.getEntry(3);
+        var constantsZDoubles = new double[] {
+                -a0z.doubleValue() * avx.doubleValue() + a0x.doubleValue() * avz.doubleValue()
+                        + b0z.doubleValue() * bvx.doubleValue() - b0x.doubleValue() * bvz.doubleValue(),
+                -b0z.doubleValue() * bvx.doubleValue() + b0x.doubleValue() * bvz.doubleValue()
+                        + c0z.doubleValue() * cvx.doubleValue() - c0x.doubleValue() * cvz.doubleValue(),
+                -c0z.doubleValue() * cvx.doubleValue() + c0x.doubleValue() * cvz.doubleValue()
+                        + d0z.doubleValue() * dvx.doubleValue() - d0x.doubleValue() * dvz.doubleValue(),
+                -d0z.doubleValue() * dvx.doubleValue() + d0x.doubleValue() * dvz.doubleValue()
+                        + e0z.doubleValue() * evx.doubleValue() - e0x.doubleValue() * evz.doubleValue() };
 
-        RealVector solutionZ = solverZ.solve(constantsZ);
+        assert (vectorEquals(constants, constantsDoubles));
+        assert (vectorEquals(constantsZ, constantsZDoubles));
+        assert (matrixEquals(coefficients, coefficientsDoubles));
+        assert (matrixEquals(coefficientsZ, coefficientsZDoubles));
+        BigDecimal[] solution = solve(coefficients, constants);
 
-        long hvz = (long) solutionZ.getEntry(0);
-        assert ((h0x == (long) solutionZ.getEntry(1)));
-        assert ((hvx == (long) solutionZ.getEntry(2)));
-        long h0z = (long) solutionZ.getEntry(3);
+        var hvy = solution[0].doubleValue();
+        var h0x = solution[1].doubleValue();
+        var hvx = solution[2].doubleValue();
+        var h0y = solution[3].doubleValue();
 
-        var h = new Hailstone(new Vector3(h0x, h0y, h0z), new Vector3(hvx, hvy, hvz));
+        BigDecimal[] solutionZ = solve(coefficientsZ, constantsZ);
+
+        var hvz = solutionZ[0].doubleValue();
+        assert (epsEquals(h0x, solutionZ[1].doubleValue()));
+        assert (epsEquals(hvx, solutionZ[2].doubleValue()));
+        var h0z = solutionZ[3].doubleValue();
+
+        var h = new Hailstone(new Vector3(h0x, h0y, h0z),
+                new Vector3(hvx, hvy, hvz));
 
         var range = new Vector3(0, 0, 0);
         var rangeEnd = new Vector3(1, 1, 1);
@@ -674,16 +440,52 @@ public class App {
         return h;
     }
 
+    private boolean matrixEquals(BigDecimal[][] coefficients, double[][] coefficientsDoubles) {
+        for (int j = 0; j < coefficients.length; j++) {
+            for (int i = 0; i < coefficients[j].length; i++) {
+                if (!epsEquals(coefficients[j][i].doubleValue(), coefficientsDoubles[j][i])) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean vectorEquals(BigDecimal[] constants, double[] constantsDoubles) {
+        for (int i = 0; i < constants.length; i++) {
+            if (!epsEquals(constants[i].doubleValue(), constantsDoubles[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private BigDecimal[] solve(BigDecimal[][] coefficients, BigDecimal[] constants) {
+
+        var m = MatrixUtils.createFieldMatrix(Arrays.stream(coefficients)
+                .map(r -> Arrays.stream(r).map(BigReal::new).toArray(BigReal[]::new)).toArray(BigReal[][]::new));
+        var c = new ArrayFieldVector<>(Arrays.stream(constants).map(BigReal::new).toArray(BigReal[]::new));
+
+        var solver = new FieldLUDecomposition<>(m).getSolver();
+        var solution = solver.solve(c);
+        var result = new BigDecimal[constants.length];
+        for (var i = 0; i < constants.length; i++) {
+            result[i] = solution.getEntry(i).bigDecimalValue();
+        }
+        return result;
+
+    }
+
     public static void main(String[] args) {
         final var input = IO.getResource("com/benjaminbinford/day24/input.txt");
 
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        // IO.answer(String.format("Part 1: %d", app.countInsideIntersections(new
-        // Vector3(200_000_000_000_000.0,
-        // 200000000000000.0, 0), new Vector3(400000000000000.0, 400000000000000.0,
-        // 0))));
+        IO.answer(String.format("Part 1: %d", app.countInsideIntersections(new Vector3(200_000_000_000_000.0,
+                200000000000000.0, 0),
+                new Vector3(400000000000000.0, 400000000000000.0,
+                        0))));
         Hailstone h = app.findIntersector();
         IO.answer(String.format("Part 2: %s", h));
         IO.answer(h.position.x + h.position.y + h.position.z);

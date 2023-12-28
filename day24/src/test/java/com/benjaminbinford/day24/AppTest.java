@@ -37,11 +37,7 @@ class AppTest {
                                                 new App.Vector3(19, 13, 30),
                                                 new App.Vector3(-2, 1, -2)),
                                 App.Hailstone.of3D(rep));
-                assertEquals(
-                                new App.Hailstone(
-                                                new App.Vector3(19, 13, 0),
-                                                new App.Vector3(-2, 1, 0)),
-                                App.Hailstone.of2D(rep));
+
         }
 
         @ParameterizedTest
@@ -109,27 +105,4 @@ class AppTest {
                                 2)), app.findIntersector());
         }
 
-        @Test
-        void testFindIntersector1d() {
-                var input = IO.getResource("com/benjaminbinford/day24/testinput.txt");
-
-                var app = new App(input);
-
-                assertEquals(new Hailstone(new Vector3(24, 0, 0), new Vector3(-3, 0,
-                                0)),
-                                app.find1dIntersector(new App.Vector3(7, 7, 7), new App.Vector3(27, 27, 27),
-                                                Vector3::x,
-                                                a -> new Vector3(a, 0, 0), app.hailstoneXConstraints));
-
-                assertEquals(new Hailstone(new Vector3(0, 13, 0), new Vector3(0, 1,
-                                0)),
-                                app.find1dIntersector(new App.Vector3(7, 7, 7), new App.Vector3(27, 27, 27), Vector3::y,
-                                                a -> new Vector3(0, a, 0), app.hailstoneYConstraints));
-                assertEquals(new Hailstone(new Vector3(0, 0, 10), new Vector3(0, 0,
-                                2)),
-                                app.find1dIntersector(new App.Vector3(7, 7, 7), new App.Vector3(27, 27, 27),
-                                                Vector3::z,
-                                                a -> new Vector3(0, 0, a),
-                                                app.hailstoneZConstraints));
-        }
 }

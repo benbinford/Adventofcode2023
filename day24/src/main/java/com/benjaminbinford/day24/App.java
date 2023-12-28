@@ -4,6 +4,13 @@ import java.util.List;
 import java.util.function.DoubleFunction;
 import java.util.function.ToDoubleFunction;
 
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.DecompositionSolver;
+import org.apache.commons.math3.linear.LUDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+
 import com.benjaminbinford.utils.AdventException;
 import com.benjaminbinford.utils.IO;
 
@@ -553,49 +560,118 @@ public class App {
         }
     }
 
-    public Hailstone findIntersector(Vector3 startRange, Vector3 endRange) {
+    public Hailstone findIntersector() {
 
-        var x = find1dIntersector(startRange, endRange,
-                Vector3::x,
-                a -> new Vector3(a, 0, 0), hailstoneXConstraints);
-        var y = find1dIntersector(startRange, endRange,
-                Vector3::y,
-                a -> new Vector3(0, a, 0), hailstoneYConstraints);
-        var z = find1dIntersector(startRange, endRange,
-                Vector3::z,
-                a -> new Vector3(0, 0, a), hailstoneZConstraints);
+        var a = hailstones3d.get(0);
+        var b = hailstones3d.get(1);
+        var c = hailstones3d.get(2);
+        var d = hailstones3d.get(3);
+        var e = hailstones3d.get(4);
 
-        return new Hailstone(new Vector3(x.position().x(), y.position().y(), z.position().z()),
-                new Vector3(x.velocity().x(), y.velocity().y(), z.velocity().z()));
+        var a0x = a.position.x;
+        var a0y = a.position.y;
+        var a0z = a.position.z;
+        var avx = a.velocity.x;
+        var avy = a.velocity.y;
+        var avz = a.velocity.z;
 
-    }
+        var b0x = b.position.x;
+        var b0y = b.position.y;
+        var b0z = b.position.z;
+        var bvx = b.velocity.x;
+        var bvy = b.velocity.y;
+        var bvz = b.velocity.z;
 
-    public Hailstone findIntersector2d(Vector3 startRange, Vector3 endRange) {
-        for (var pi = startRange.x; pi <= endRange.x; pi++) {
-            for (var pj = startRange.y; pj <= endRange.y; pj++) {
+        var c0x = c.position.x;
+        var c0y = c.position.y;
+        var c0z = c.position.z;
+        var cvx = c.velocity.x;
+        var cvy = c.velocity.y;
+        var cvz = c.velocity.z;
 
-                for (var vi = -(endRange.x - startRange.x) / hailstones3d.size(); vi <= (endRange.x - startRange.x)
-                        / hailstones3d.size(); vi++) {
-                    for (var vj = -(endRange.y - startRange.y)
-                            / hailstones3d.size(); vj <= (endRange.y - startRange.y) /
-                                    hailstones3d.size(); vj++) {
-                        {
+        var d0x = d.position.x;
+        var d0y = d.position.y;
+        var d0z = d.position.z;
+        var dvx = d.velocity.x;
+        var dvy = d.velocity.y;
+        var dvz = d.velocity.z;
 
-                            var p = new Vector3(pi, pj, 0);
-                            var v = new Vector3(vi, vj, 0);
-                            var a = new Hailstone(p, v);
-                            if (hailstones3d.stream()
-                                    .allMatch(b -> a.pathIntersects2d(b, startRange, endRange).intersects())) {
-                                return a;
-                            }
-                        }
-                    }
-                }
-            }
+        var e0x = e.position.x;
+        var e0y = e.position.y;
+        var e0z = e.position.z;
+        var evx = e.velocity.x;
+        var evy = e.velocity.y;
+        var evz = e.velocity.z;
+
+        /*
+         * see math.txt
+         * 
+         *
+         */
+
+        RealMatrix coefficients = new Array2DRowRealMatrix(
+                new double[][] {
+                        { a0x - b0x, avy - bvy, -a0y + b0y, -avx + bvx },
+                        { b0x - c0x, bvy - cvy, -b0y + c0y, -bvx + cvx },
+                        { c0x - d0x, cvy - dvy, -c0y + d0y, -cvx + dvx },
+                        { d0x - e0x, dvy - evy, -d0y + e0y, -dvx + evx }
+                },
+                false);
+
+        RealMatrix coefficientsZ = new Array2DRowRealMatrix(
+                new double[][] {
+                        { a0x - b0x, avz - bvz, -a0z + b0z, -avx + bvx },
+                        { b0x - c0x, bvz - cvz, -b0z + c0z, -bvx + cvx },
+                        { c0x - d0x, cvz - dvz, -c0z + d0z, -cvx + dvx },
+                        { d0x - e0x, dvz - evz, -d0z + e0z, -dvx + evx }
+                },
+                false);
+
+        RealVector constants = new ArrayRealVector(
+                new double[] {
+                        -a0y * avx + a0x * avy + b0y * bvx - b0x * bvy,
+                        -b0y * bvx + b0x * bvy + c0y * cvx - c0x * cvy,
+                        -c0y * cvx + c0x * cvy + d0y * dvx - d0x * dvy,
+                        -d0y * dvx + d0x * dvy + e0y * evx - e0x * evy },
+                false);
+
+        RealVector constantsZ = new ArrayRealVector(
+                new double[] {
+                        -a0z * avx + a0x * avz + b0z * bvx - b0x * bvz,
+                        -b0z * bvx + b0x * bvz + c0z * cvx - c0x * cvz,
+                        -c0z * cvx + c0x * cvz + d0z * dvx - d0x * dvz,
+                        -d0z * dvx + d0x * dvz + e0z * evx - e0x * evz },
+                false);
+
+        DecompositionSolver solver = new LUDecomposition(coefficients, 1e-17).getSolver();
+
+        DecompositionSolver solverZ = new LUDecomposition(coefficientsZ, 1e-17).getSolver();
+
+        RealVector solution = solver.solve(constants);
+
+        long hvy = (long) solution.getEntry(0);
+        long h0x = (long) solution.getEntry(1);
+        long hvx = (long) solution.getEntry(2);
+        long h0y = (long) solution.getEntry(3);
+
+        RealVector solutionZ = solverZ.solve(constantsZ);
+
+        long hvz = (long) solutionZ.getEntry(0);
+        assert ((h0x == (long) solutionZ.getEntry(1)));
+        assert ((hvx == (long) solutionZ.getEntry(2)));
+        long h0z = (long) solutionZ.getEntry(3);
+
+        var h = new Hailstone(new Vector3(h0x, h0y, h0z), new Vector3(hvx, hvy, hvz));
+
+        var range = new Vector3(0, 0, 0);
+        var rangeEnd = new Vector3(1, 1, 1);
+
+        for (var i = 0; i < hailstones3d.size(); i++) {
+            var h2 = hailstones3d.get(i);
+            assert (h.intersects(h2, range, rangeEnd) != null);
         }
 
-        throw new AdventException("No intersector found");
-
+        return h;
     }
 
     public static void main(String[] args) {
@@ -604,10 +680,14 @@ public class App {
         long startTime = System.nanoTime();
         final var app = new App(input);
 
-        IO.answer(String.format("Part 1: %d", app.countInsideIntersections(new Vector3(200_000_000_000_000.0,
-                200000000000000.0, 0), new Vector3(400000000000000.0, 400000000000000.0, 0))));
-        IO.answer(String.format("Part 2: %s", app.findIntersector2d(new Vector3(200000000000000.0,
-                200000000000000.0, 0), new Vector3(400000000000000.0, 400000000000000.0, 0))));
+        // IO.answer(String.format("Part 1: %d", app.countInsideIntersections(new
+        // Vector3(200_000_000_000_000.0,
+        // 200000000000000.0, 0), new Vector3(400000000000000.0, 400000000000000.0,
+        // 0))));
+        Hailstone h = app.findIntersector();
+        IO.answer(String.format("Part 2: %s", h));
+        IO.answer(h.position.x + h.position.y + h.position.z);
+
         long elapsedTime = System.nanoTime() - startTime;
         IO.answer(String.format("Elapsed time: %d", elapsedTime / 1_000_000));
     }

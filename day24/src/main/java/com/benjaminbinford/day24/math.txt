@@ -1,0 +1,89 @@
+h0 + hv * t = h
+a0 +av * t = a
+a0 + av *t = h0 + hv *t
+
+a0x + avx *t = h0x + hvx *t
+a0x - h0x = t * (hvx - avx)
+t = (a0x - h0x)/(hvx - avx)
+(a0x - h0x)/(hvx - avx) = (a0y-h0y)/(hvy - avy)
+
+a0x * hvy - a0x * avy - h0x * hvy + h0x * avy = a0y * hvx - a0y * avx - h0y * hvx + h0y * avx
+
+a0x * hvy - a0x * avy - h0x * hvy + h0x * avy = a0y * hvx - h0y * hvx - a0y * avx + h0y * avx        Checks
+
+a0x * hvy - a0x * avy + h0x * avy - a0y * hvx + a0y * avx + h0y * avx = h0x * hvy - h0y * hvx         Checks
+
+a0x * hvy + h0x * avy - a0y * hvx + h0y * avx + a0y * avx - a0x * avy = h0x * hvy - h0y * hvx         Checks
+
+b0x * hvy + h0x * bvy - b0y * hvx + h0y * bvx + b0y * bvx - b0x * bvy = h0x * hvy - h0y * hvx         Checks
+
+
+a0x * hvy + h0x * avy - a0y * hvx + h0y * avx + a0y * avx - a0x * avy = b0x * hvy + h0x * bvy - b0y * hvx + h0y * bvx + b0y * bvx - b0x * bvy      Checks
+
+(a0x - b0x) * hvy + (avy - bvy) * h0x + (-a0y + b0y) * hvx + (avx - bvx) * h0y +  a0y * avx - a0x * avy = b0y * bvx - b0x * bvy                    Checks
+
+*correct*
+(a0x - b0x) * hvy + (avy - bvy) * h0x + (-a0y + b0y) * hvx + (avx - bvx) * h0y = b0y * bvx - b0x * bvy - a0y * avx + a0x * avy                     Checks
+(a0x - b0x) * hvy + (avy - bvy) * h0x + (-a0y + b0y) * hvx + (bvx - avx) * h0y = avy * a0x - avx * a0y + bvx * b0y - bvy * b0x
+
+
+⎡ (a0x - b0x) (avy - bvy) (-a0y + b0y) (- bvx + avx) ⎤   ⎡hvy⎤   ⎡- a0y * avx + a0x * avy + b0y * bvx - b0x * bvy ⎤
+⎜ (b0x - c0x) (bvy - cvy) (-b0y + c0y) (- cvx + bvx) ⎜ * ⎜h0x⎜ = ⎜- b0y * bvx + b0x * bvy + c0y * cvx - c0x * cvy ⎜
+⎜ (c0x - d0x) (cvy - dvy) (-c0y + d0y) (- dvx + cvx) ⎜   ⎜hvx⎜   ⎜- c0y * cvx + c0x * bvy + d0y * dvx - d0x * dvy ⎜
+⎣ (d0x - e0x) (dvy - evy) (-d0y + e0y) (- evx + dvx) ⎦   ⎣h0y⎦   ⎣- d0y * dvx + d0x * bvy + e0y * evx - e0x * evy ⎦
+
+
+
+
+a = a0x
+b = a0y
+d = b0x
+e = b0y
+da = avx
+db = avy
+dd = bvx
+de = bvy
+x = h0x
+y = h0y
+dx = hvx
+dy = hvy
+
+(avy - bvy) * h0x + ( b0y - a0y) * hvx + (bvx - avx) * y + (a0x - b0x) * hvy = avy * a0x - avx * a0y + bvx * b0y - bvy * b0x
+
+
+
+
+b0z + bvz * s = h0z + hvz * s
+
+
+
+
+
+
+
+
+*wrong*
+hvy * (a0x - b0x) + h0x * (avy - bvy) + hvx * (-a0y + b0y) + h0y *(bvx - avx) = - a0y * avx + a0x * avy + b0y * bvx - b0x * bvy
+
+
+a0x * hvy + h0x * avy - a0y * hvx + a0y * avx             - a0x * avy
+
+
+a0x * hvy -h0x * hvy + h0x * avy - a0y * hvx + h0y * hvx - h0y * avx + a0y * avx - a0x * avy= 0
+
+a0x * hvy + h0x * avy - a0y * hvx - h0y * avx + a0y * avx - a0x * avy= h0x * hvy -h0y * hvx
+
+b0x * hvy + h0x * bvy - b0y * hvx - h0y * bvx + b0y * bvx - b0x * bvy= h0x * hvy -h0y * hvx
+
+a0x * hvy + h0x * avy - a0y * hvx - h0y * avx + a0y * avx - a0x * avy = b0x * hvy + h0x * bvy - b0y * hvx - h0y * bvx + b0y * bvx - b0x * bvy
+
+a0x * hvy + h0x * avy - a0y * hvx - h0y * avx + a0y * avx - a0x * avy - b0x * hvy - h0x * bvy + b0y * hvx + h0y * bvx - b0y * bvx + b0x * bvy
+
+a0x * hvy - b0x * hvy + h0x * avy - h0x * bvy - a0y * hvx + b0y * hvx + h0y * bvx - h0y * avx + a0y * avx - a0x * avy - b0y * bvx + b0x * bvy
+
+hvy * (a0x - b0x) + h0x * (avy - bvy) hvx * (-a0y + b0y) + h0y *(bvx - avx) = - a0y * avx + a0x * avy + b0y * bvx - b0x * bvy
+
+⎡ (a0x - b0x) (avy - bvy) (-a0y + b0y) (bvx - avx) ⎤   ⎡hvy⎤   ⎡- a0y * avx + a0x * avy + b0y * bvx - b0x * bvy ⎤
+⎜ (b0x - c0x) (bvy - cvy) (-b0y + c0y) (cvx - bvx) ⎜ * ⎜h0x⎜ = ⎜- b0y * bvx + b0x * bvy + c0y * cvx - c0x * cvy ⎜
+⎜ (c0x - d0x) (cvy - dvy) (-c0y + d0y) (dvx - cvx) ⎜   ⎜hvx⎜   ⎜- c0y * cvx + c0x * bvy + d0y * dvx - d0x * dvy ⎜
+⎣ (d0x - e0x) (dvy - evy) (-d0y + e0y) (evx - dvx) ⎦   ⎣h0y⎦   ⎣- d0y * dvx + d0x * bvy + e0y * evx - e0x * evy ⎦

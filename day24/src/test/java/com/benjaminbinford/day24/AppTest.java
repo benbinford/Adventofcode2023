@@ -106,17 +106,7 @@ class AppTest {
                 var app = new App(input);
 
                 assertEquals(new Hailstone(new Vector3(24, 13, 10), new Vector3(-3, 1,
-                                2)), app.findIntersector(new App.Vector3(7, 7, 7), new App.Vector3(27, 27, 27)));
-        }
-
-        @Test
-        void testFindIntersector2d() {
-                var input = IO.getResource("com/benjaminbinford/day24/testinput.txt");
-
-                var app = new App(input);
-
-                assertEquals(new Hailstone(new Vector3(24, 13, 10), new Vector3(-3, 1,
-                                2)), app.findIntersector2d(new App.Vector3(7, 7, 7), new App.Vector3(27, 27, 27)));
+                                2)), app.findIntersector());
         }
 
         @Test
